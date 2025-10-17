@@ -1,0 +1,74 @@
+{
+    "menu":{
+        "title1":"Entrys",
+        "title2":"Products",
+        "title3":"Users",
+        "title4":"System Logs"
+    },
+    "submenu":"Actions",
+    "login": {
+        "title": "Login",
+        "button": "Sign In"
+    },
+    "products":{
+        "btnCreate":"Create product",
+        "btnUpdate":"Update product",
+        "btnDelete":"Delete product",
+        "btnGet":"Product list",
+        "alerSucces":"The product has been created successfully",
+        "alertError":"An error occurred while creating the product, please try again later"
+    },
+    "Entrys":{
+        "btnCreate":"Create entry",
+        "btnUpdate":"Update entry",
+        "btnDelete":"Delete entry",
+        "btnGet":"Entry list",
+        "form":{
+            "btnCreate":"Create",
+            "btnUpdate":"Update",
+            "client":"Client",
+            "invoice":"Invoice number",
+            "supplier":"Supplier",
+            "created":"Created",
+            "pkey":"public id"
+        },
+        "alerSucces":"The entry has been created successfully",
+        "alertError":"There was an error creating the entry, please try again later"
+    },
+    "Classify":{
+        "btnCreate":"Create classify",
+        "btnUpdate":"Update classify",
+        "btnDelete":"Delete classify",
+        "btnGet":"Classifty list",
+        "btnStart":"Start classifying",
+        "lblProd":"Search and add product",
+        "list":{
+            "lblOptions":"Options",
+            "lblProduct":"Product",
+            "lblLot":"Lot",
+            "lblBatch":"Batch",
+            "lblQuantity":"Quantity",
+            "lblSupplier":"Supplier",
+            "lblCountry_origin":"Country of origin",
+            "lblSeller_country":"Seller's country of origin",
+            "lblGross_weight":"Gross weight",
+            "lblNet_weight":"Net weight",
+            "lblUnit_weight":"Unit of weight",
+            "lblBrand":"Brand",
+            "lblModel":"Model",
+            "lblNo_Series":"No. Series",
+            "lblUnit_price":"Unit price",
+            "lblUnit_measurement":"Unit of measurement",
+            "lblFractionMX":"Tariff fraction",
+            "lblParty":"Party",
+            "lblItem":"Item",
+            "lblLumps":"Lumps"
+        }
+    },
+    "Users":{
+        "btnCreate":"Create users",
+        "btnUpdate":"Update users",
+        "btnDelete":"Delete users",
+        "btnGet":"Users list"
+    }
+}

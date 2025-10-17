@@ -1,0 +1,74 @@
+{
+    "menu":{
+        "title1":"Entradas",
+        "title2":"Productos",
+        "title3":"Usuarios",
+        "title4":"Logs del sistema"
+    },
+    "submenu":"Acciones",
+    "login": {
+        "title": "Iniciar sesión",
+        "button": "Entrar"
+    },
+    "products":{
+        "btnCreate":"Crear producto",
+        "btnUpdate":"Actualizar producto",
+        "btnDelete":"Eliminar producto",
+        "btnGet":"Lista de productos",
+        "alerSucces":"El producto ha sido creado con éxito",
+        "alertError":"Se produjo un error al crear el producto, inténtelo nuevamente más tarde"
+    },
+    "Entrys":{
+        "btnCreate":"Crear entrada",
+        "btnUpdate":"Actualizar entrada",
+        "btnDelete":"Eliminar entrada",
+        "btnGet":"Lista de entradas",
+        "form":{
+            "btnCreate":"Crear",
+            "btnUpdate":"Actualizar",
+            "client":"Cliente",
+            "invoice":"Numero de factura",
+            "supplier":"Proveedor",
+            "created":"Creado",
+            "pkey":"Identificador publico"
+        },
+        "alerSucces":"La entrada ha sido creado con éxito",
+        "alertError":"Se produjo un error al crear la entrada, inténtelo nuevamente más tarde"
+    },
+    "Classify":{
+        "btnCreate":"Crear clasificacion",
+        "btnUpdate":"Actualizar clasificacion",
+        "btnDelete":"Eliminar clasificacion",
+        "btnGet":"Lista clasificacion",
+        "btnStart":"Iniciar clasificacion",
+        "lblProd":"Buscar y agregar producto",
+        "list":{
+            "lblOptions":"Opciones",
+            "lblProduct":"Producto",
+            "lblLot":"Lote",
+            "lblBatch":"Batch",
+            "lblQuantity":"Cantidad",
+            "lblSupplier":"Proveedor",
+            "lblCountry_origin":"País de origen",
+            "lblSeller_country":"País de origen de Vendedor",
+            "lblGross_weight":"Peso bruto",
+            "lblNet_weight":"Peso neto",
+            "lblUnit_weight":"Unidad de peso",
+            "lblBrand":"Marca",
+            "lblModel":"Modelo",
+            "lblNo_Series":"No. Serie",
+            "lblUnit_price":"Precio unitario",
+            "lblUnit_measurement":"Unidad de medida",
+            "lblFractionMX":"Fracción arancelaria",
+            "lblParty":"Partidas",
+            "lblItem":"Item",
+            "lblLumps":"Bultos"
+        }
+    },
+    "Users":{
+        "btnCreate":"Crear usuarios",
+        "btnUpdate":"Actualizar usuarios",
+        "btnDelete":"Eliminar usuarios",
+        "btnGet":"Lista usuarios"
+    }
+}
