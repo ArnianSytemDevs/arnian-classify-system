@@ -79,6 +79,7 @@ export type Product = {
 
 export type Supplier = {
     id: string;
+    public_key: string;
     name?: string;
     rfc?: string;
     vin?: string;
@@ -130,6 +131,7 @@ export type Exchange = {
 }
 
 export type Clients = {
+    public_key: string;
     id: string,
     name: string,
     alias: string,

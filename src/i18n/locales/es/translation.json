@@ -3,7 +3,9 @@
         "title1":"Entradas",
         "title2":"Productos",
         "title3":"Usuarios",
-        "title4":"Logs del sistema"
+        "title4":"Logs del sistema",
+        "title5":"Cliente",
+        "title6":"Proveedor"
     },
     "submenu":"Acciones",
     "login": {
@@ -70,5 +72,11 @@
         "btnUpdate":"Actualizar usuarios",
         "btnDelete":"Eliminar usuarios",
         "btnGet":"Lista usuarios"
+    },
+    "Clients":{
+        "btnCreate":"Crear clientes",
+        "btnUpdate":"Actualizar clientes",
+        "btnDelete":"Eliminar clientes",
+        "btnGet":"Listado de clientes"
     }
 }

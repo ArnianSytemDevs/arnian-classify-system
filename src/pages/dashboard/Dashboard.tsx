@@ -1,5 +1,6 @@
 import MenuComponent from '../../components/Menu/MenuComponent'
 import { useClassifyContext } from '../../hooks/useClassifyContext'
+import Clients from '../Clients/Clients'
 import Entrys from '../Entrys/Entrys'
 import Products from '../Products/Products'
 
@@ -14,6 +15,7 @@ export default function Dashboard() {
     <div className='w-full h-full' >
       {selectedWindow == 0 || selectedWindow == 1? <Products/> : <></> }
       {selectedWindow == 2? <Entrys /> : <></> }
+      {selectedWindow == 3? <Clients /> : <></> }
     </div>
     </div>    
     </>
