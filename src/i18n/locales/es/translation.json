@@ -18,7 +18,8 @@
         "btnDelete":"Eliminar producto",
         "btnGet":"Lista de productos",
         "alerSucces":"El producto ha sido creado con éxito",
-        "alertError":"Se produjo un error al crear el producto, inténtelo nuevamente más tarde"
+        "alertError":"Se produjo un error al crear el producto, inténtelo nuevamente más tarde",
+        "btnCreateAdd":"Crear y agregar producto"
     },
     "Entrys":{
         "btnCreate":"Crear entrada",
