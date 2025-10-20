@@ -17,13 +17,15 @@ import MenuComponent from "../../components/Menu/MenuComponent";
 import { CgSandClock } from "react-icons/cg";
 import { useNavigate } from "react-router";
 import { usePreventNavigation } from "../../hooks/ReturnAlert";
+import { FaPlusSquare } from "react-icons/fa";
+import ProductForm from "../../components/Formularios/ProductForm";
 
 export default function Classify() {
 
     usePreventNavigation()
 
     const { t } = useTranslation();
-    const { classifyState, classifyDispatch } = useClassifyContext();
+    const { classifyState, classifyDispatch, entryDispatch } = useClassifyContext();
     const [inputProduct, setInputProduct] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
     const [inputUnit] = useState("");
@@ -33,6 +35,7 @@ export default function Classify() {
     const [clients, setClients] = useState<Clients[]>([]);
     const [measurements,setMeasurements] = useState<Measurement[]>([]);
     const [countries,setCountries] = useState([])
+    const [createProduct,setCreateProduct] = useState(false)
     const navigate = useNavigate()
     const thBody =
         "px-1 text-xs md:text-sm font-semibold text-left text-gray-800 dark:text-gray-200 whitespace-nowrap min-w-40";
@@ -293,72 +296,120 @@ export default function Classify() {
     };
 
     const handleSaveAll = async () => {
-        try {
-            if (!classifyState.entrySelected.id) {
-            await Swal.fire({
-                icon: "warning",
-                title: "No hay entrada seleccionada",
-                text: "Selecciona una entrada antes de guardar.",
-            });
-            return;
-            }
-
-            const confirm = await Swal.fire({
-            title: "¿Guardar clasificación?",
-            text: "Se crearán o actualizarán los productos en PocketBase.",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Guardar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#22c55e",
-            });
-
-            if (!confirm.isConfirmed) return;
-
-            const results = await ClassifyController.saveClassificationBatch(
-            classifyState.entrySelected.id,
-            classifyState.products,
-            classifyDispatch
-            );
-
-            const created = results.filter((r) => r.status === "created").length;
-            const updated = results.filter((r) => r.status === "updated").length;
-            const failed = results.filter((r) => r.status === "error").length;
-
-            await Swal.fire({
-            icon: failed > 0 ? "warning" : "success",
-            title: "Sincronización completada",
-            html: `
-                <p><b>${created}</b> productos creados</p>
-                <p><b>${updated}</b> productos actualizados</p>
-                <p><b>${failed}</b> errores</p>
-            `,
-            confirmButtonColor: "#22c55e",
-            });
-        } catch (error) {
-            toast.error("❌ Error general al sincronizar");
+    try {
+        // 🛑 Validar si hay productos en modo edición
+        if (classifyState.products.some((p) => p.edit === true)) {
+        await Swal.fire({
+            icon: "warning",
+            title: "Edición activa",
+            text: "No puedes realizar esta acción mientras existan productos en modo edición. Guarda o confirma los cambios primero.",
+            confirmButtonColor: "#f59e0b",
+        });
+        return; // 🔁 Detiene la ejecución aquí
         }
+
+        // 🧾 Validar si hay una entrada seleccionada
+        if (!classifyState.entrySelected.id) {
+        await Swal.fire({
+            icon: "warning",
+            title: "No hay entrada seleccionada",
+            text: "Selecciona una entrada antes de guardar.",
+        });
+        return;
+        }
+
+        // 💾 Confirmar acción de guardado
+        const confirm = await Swal.fire({
+        title: "¿Guardar clasificación?",
+        text: "Se crearán o actualizarán los productos en PocketBase.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Guardar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#22c55e",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        // 🚀 Ejecutar guardado en PocketBase
+        const results = await ClassifyController.saveClassificationBatch(
+        classifyState.entrySelected.id,
+        classifyState.products,
+        classifyDispatch
+        );
+
+        // 📊 Resumen del resultado
+        const created = results.filter((r) => r.status === "created").length;
+        const updated = results.filter((r) => r.status === "updated").length;
+        const failed = results.filter((r) => r.status === "error").length;
+
+        await Swal.fire({
+        icon: failed > 0 ? "warning" : "success",
+        title: "Sincronización completada",
+        html: `
+            <p><b>${created}</b> productos creados</p>
+            <p><b>${updated}</b> productos actualizados</p>
+            <p><b>${failed}</b> errores</p>
+        `,
+        confirmButtonColor: "#22c55e",
+        });
+    } catch (error) {
+        console.error("❌ Error general al sincronizar:", error);
+        toast.error("❌ Error general al sincronizar");
+    }
     };
 
 
+    const handleCreateProduct = () =>{
+        if(classifyState.products.some((p) => p.edit === true)){
+            Swal.fire({
+            icon: "warning",
+            title: "Edición activa",
+            text: "No puedes realizar esta acción mientras existan productos en modo edición. Guarda o confirma los cambios primero.",
+            confirmButtonColor: "#f59e0b",
+            });
+        }else{
+            setCreateProduct(!createProduct)
+        }
+    }
+
+    const handleReturn = () =>{
+        Swal.fire({
+        title: "¿Deseas salir de esta página?",
+        text: "Si sales, podrías perder los cambios no guardados.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#ef4444",
+        }).then((result) => {
+        if (result.isConfirmed) {
+            classifyDispatch({ type: "clear-all" })
+            entryDispatch({ type: 'clear-state' })
+            navigate("/dashboard")
+        } else {
+            return "a"
+        }
+        });
+    }
 
     return (
         <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
             <MenuComponent />
             <div className="text-center bg-cyan-50/50 dark:bg-slate-800 p-5 min-h-screen overflow-x-auto">
-                <div className="mt-6 flex">
+                <div className="mt-6 flex gap-5">
                     <button
-                        onClick={handleSaveAll}
+                        onClick={()=>handleSaveAll()}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                     >
                         Guardar Clasificación
                     </button>
-                    {/* <button
-                        onClick={handleSaveAll}
+                    <button
+                        onClick={()=>{ handleReturn() }}
                         className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                     >
                         Salir
-                    </button> */}
+                    </button>
                     
                 </div>
                 {/* 🧩 ENCABEZADO */}
@@ -416,6 +467,10 @@ export default function Classify() {
                     )}
                     renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
                     />
+                    <button 
+                        onClick={()=>{ handleCreateProduct() }}
+                        className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
+                    > <FaPlusSquare /> </button>
                 </div>
 
                 {/* 🧾 TABLA DE PRODUCTOS */}
@@ -729,7 +784,7 @@ export default function Classify() {
                     </table>
 
                 </div>
-                
+                <ProductForm openModal={createProduct} setOpenModal={setCreateProduct} mode="classify" />
                 <ToastContainer />
             </div>
         </div>

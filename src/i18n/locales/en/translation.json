@@ -16,7 +16,8 @@
         "btnDelete":"Delete product",
         "btnGet":"Product list",
         "alerSucces":"The product has been created successfully",
-        "alertError":"An error occurred while creating the product, please try again later"
+        "alertError":"An error occurred while creating the product, please try again later",
+        "btnCreateAdd":"Create & add product"
     },
     "Entrys":{
         "btnCreate":"Create entry",
