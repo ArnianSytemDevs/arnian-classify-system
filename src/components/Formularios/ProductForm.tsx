@@ -20,30 +20,33 @@ type ProductFormProps = {
 
 export default function ProductForm({ openModal, setOpenModal,mode }: ProductFormProps) {
 
-  const { productState,productDispatch } = useClassifyContext()
+  const { productState,productDispatch,classifyDispatch } = useClassifyContext()
   const [inputValue, setInputValue] = useState(""); // solo para búsqueda dinámica
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [measurement,setMeasurement] = useState<Measurement[]>([])
   const [status,setStatus] = useState<Status[]>([])
   const { t } = useTranslation();
   const inputText = {
-      "& .MuiInputBase-root": {
-          color: "text.primary", // hereda del tema
-          backgroundColor: "background.paper",
-      },
-      "& .MuiInputLabel-root": {
-          color: "text.secondary",
-      },
-      "& .MuiOutlinedInput-notchedOutline": {
-          borderColor: "divider",
-      },
-      "&:hover .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#06b6d4", // cyan-500
-      },
-      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-          borderColor: "#0891b2", // cyan-600
-      },
-  }
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
+    "& .MuiInputBase-root": {
+        color: "text.primary",
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
   
   useEffect(() => {
     if(openModal){
@@ -167,12 +170,14 @@ const renderPreview = (file: File | string) => {
 
   const handleSubmit = (e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault()
-    ProductFormController.createProduct(productState.productForm,status,mode,productState.productList[0]).then((resp)=>{
+    ProductFormController.createProduct(productState.productForm,status,mode,productState.productList[0],classifyDispatch).then((resp)=>{
       if(resp){
         window.alert(`${t("products.alerSucces")}`)
         productDispatch({type:'clear-state'})
         setOpenModal(false)
-        window.location.reload()
+        if(mode == "create" || mode == "edit"){
+          window.location.reload()
+        }
       }else{
         window.alert(`${t("products.alertError")}`)
       }
@@ -232,16 +237,16 @@ const renderPreview = (file: File | string) => {
         <div className=" overflow-auto p-5">
           <form className=" grid grid-cols-2 gap-5 " >
             {/* Campos */}
-            <TextField sx={inputText}  type="text" label="name" id="name" value={productState.productForm.name} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="text" label="alias" id="alias" value={productState.productForm.alias} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="text" label="code" id="code" value={productState.productForm.code} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="number" label="part_number" id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="text" label="model" id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="text" label="brand" id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="text" label="serial_number" id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText}  type="number" label="unit_price" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="name" id="name" value={productState.productForm.name} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="alias" id="alias" value={productState.productForm.alias} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="code" id="code" value={productState.productForm.code} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" label="part_number" id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="model" id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="brand" id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label="serial_number" id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" label="unit_price MXN" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <div>
-              <TextField sx={inputText}  style={{ width:'70%' }} type="number" id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label="weight" fullWidth required />
+              <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label="weight" fullWidth required />
               <Select
                 sx={{
                     width: "30%",
@@ -300,12 +305,12 @@ const renderPreview = (file: File | string) => {
                 });
               }}
               renderInput={(params) => (
-                <TextField sx={inputText}  {...params} required label="Proveedor" />
+                <TextField sx={inputText} variant="filled" {...params} required label="Proveedor" />
               )}
             />
 
             {/* Archivos con preview */}
-            <TextField sx={inputText}  type="text" label="description" id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
+            <TextField sx={inputText} variant="filled" type="text" label="description" id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
                 Archivos
@@ -362,7 +367,7 @@ const renderPreview = (file: File | string) => {
             Cancelar
           </button>
           <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
-            {t("actions.create", { defaultValue: "Crear" })}
+            { mode !== "classify"? t("actions.create") :t("products.btnCreateAdd")}
           </button>
         </div>
       </div>
