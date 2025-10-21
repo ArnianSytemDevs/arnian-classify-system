@@ -87,3 +87,18 @@ export type classifyProduct = {
     syncError?: string | null;
     id_pocketbase?: string | null;
 };
+
+// Asegúrate de que tu tipo tenga public_key
+export type ClientsForm = {
+    public_key: string;
+    name: string;
+    alias: string;
+    field: string;
+    rfc: string;
+    is_deleted: boolean;
+    id_status: any;
+    address: string;
+    postal_code: number;
+    email: string;
+    image: File[] | any;
+};

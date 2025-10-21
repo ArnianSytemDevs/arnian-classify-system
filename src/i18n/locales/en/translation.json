@@ -3,7 +3,9 @@
         "title1":"Entrys",
         "title2":"Products",
         "title3":"Users",
-        "title4":"System Logs"
+        "title4":"System Logs",
+        "title5":"Clients",
+        "title6":"Suppliers"
     },
     "submenu":"Actions",
     "login": {
@@ -71,5 +73,11 @@
         "btnUpdate":"Update users",
         "btnDelete":"Delete users",
         "btnGet":"Users list"
+    },
+    "Clients":{
+        "btnCreate":"Create clients",
+        "btnUpdate":"Update clients",
+        "btnDelete":"Delete clients",
+        "btnGet":"Clients list"
     }
 }

@@ -5,6 +5,8 @@ import { SiAwssecretsmanager } from "react-icons/si";
 import { MdTranslate } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
+import { FaUserLarge } from "react-icons/fa6";
+import { IoBusiness } from "react-icons/io5";
 
 export default function MenuComponent() {
     const { setSelectedWindow } = useClassifyContext();
@@ -55,12 +57,34 @@ export default function MenuComponent() {
                     <FaBoxes className="text-2xl" />
                     <span className={tooltip}>{t("menu.title1")}</span>
                 </button>
+                
+                <button
+                    className={baseBtn}
+                    aria-label="Clients"
+                    onClick={() => {
+                        setSelectedWindow(3);
+                    }}
+                >
+                    <FaUserLarge className="text-2xl" />
+                    <span className={tooltip}>{t("menu.title5")}</span>
+                </button>
+
+                <button
+                    className={baseBtn}
+                    aria-label="Suppliers"
+                    onClick={() => {
+                        setSelectedWindow(4);
+                    }}
+                >
+                    <IoBusiness className="text-2xl" />
+                    <span className={tooltip}>{t("menu.title6")}</span>
+                </button>
 
                 <button
                     className={baseBtn}
                     aria-label="Users"
                     onClick={() => {
-                        setSelectedWindow(3);
+                        setSelectedWindow(5);
                     }}
                 >
                     <FaUsers className="text-2xl" />
@@ -71,7 +95,7 @@ export default function MenuComponent() {
                     className={baseBtn}
                     aria-label="Logs"
                     onClick={() => {
-                        setSelectedWindow(4);
+                        setSelectedWindow(6);
                     }}
                 >
                     <SiAwssecretsmanager className="text-2xl" />
