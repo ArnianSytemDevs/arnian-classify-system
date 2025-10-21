@@ -89,6 +89,7 @@ export type Supplier = {
     alias?: string;
     postal_code?: string;
     id_status?: Status['id']; // relation → Status
+    is_deleted: boolean;
     created: string;
     updated: string;
 }

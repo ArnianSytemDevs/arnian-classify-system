@@ -102,3 +102,16 @@ export type ClientsForm = {
     email: string;
     image: File[] | any;
 };
+
+export type SupplierForm = {
+    public_key: string;
+    name: string;
+    rfc: string;
+    vin: string;
+    address: string;
+    phone_number: string;
+    email: string;
+    alias: string;
+    postal_code: string;
+    is_deleted: boolean; 
+};

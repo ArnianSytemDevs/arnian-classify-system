@@ -79,5 +79,13 @@
         "btnUpdate":"Update clients",
         "btnDelete":"Delete clients",
         "btnGet":"Clients list"
+    },
+    "Suppliers":{
+        "btnCreate":"Create suppliers",
+        "btnUpdate":"Update suppliers",
+        "btnDelete":"Delete suppliers",
+        "btnGet":"Suppliers list",
+        "alerSucces":"The supplier has been created successfully",
+        "alertError":"There was an error creating the provider, please try again later"
     }
 }

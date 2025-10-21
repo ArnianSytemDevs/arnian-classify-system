@@ -1,7 +1,6 @@
 import { useState } from "react";
 import logo from "../../assets/icon.png";
-import { FaBoxes, FaEnvelopeOpenText, FaUsers } from "react-icons/fa";
-import { SiAwssecretsmanager } from "react-icons/si";
+import { FaBoxes, FaEnvelopeOpenText } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
@@ -80,7 +79,7 @@ export default function MenuComponent() {
                     <span className={tooltip}>{t("menu.title6")}</span>
                 </button>
 
-                <button
+                {/* <button
                     className={baseBtn}
                     aria-label="Users"
                     onClick={() => {
@@ -100,7 +99,7 @@ export default function MenuComponent() {
                 >
                     <SiAwssecretsmanager className="text-2xl" />
                     <span className={tooltip}>{t("menu.title4")}</span>
-                </button>
+                </button> */}
             </div>
 
             {/* Selector de idioma abajo */}
