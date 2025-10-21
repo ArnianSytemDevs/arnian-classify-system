@@ -2,20 +2,9 @@ import type { ChangeEvent } from "react";
 import type { SelectChangeEvent } from "@mui/material";
 import { v4 as uuidv4 } from "uuid";
 import type { Supplier } from "../types/collections";
-
+import type { SupplierForm } from "../types/forms";
 // ✅ Tipo del formulario
-export type SupplierForm = {
-    public_key: string;
-    name: string;
-    rfc: string;
-    vin: string;
-    address: string;
-    phone_number: string;
-    email: string;
-    alias: string;
-    postal_code: string;
-//   files: File[] | any;
-};
+
 
 // ✅ Acciones disponibles
 export type SupplierActions =
@@ -48,7 +37,7 @@ export const SupplierInitialState: SupplierState = {
         email: "",
         alias: "",
         postal_code: "",
-        // files: [],
+        is_deleted: false
     },
 };
 
@@ -99,33 +88,6 @@ else if (action.type === "change-select") {
     };
 }
 
-// 🔹 Agregar archivos
-// else if (action.type === "add-files") {
-//     return {
-//     ...state,
-//     supplierForm: {
-//         ...state.supplierForm,
-//         files: [
-//         ...state.supplierForm.files,
-//         ...Array.from(action.payload.files),
-//         ],
-//     },
-//     };
-// }
-
-// // 🔹 Eliminar archivo
-// else if (action.type === "delete-file") {
-//     return {
-//     ...state,
-//     supplierForm: {
-//         ...state.supplierForm,
-//         files: state.supplierForm.files.filter(
-//         (file: File) => file.name !== action.payload.file
-//         ),
-//     },
-//     };
-// }
-
 // 🔹 Agregar o quitar de lista
 else if (action.type === "change-box") {
     if (action.payload.status) {
@@ -161,7 +123,7 @@ else if (action.type === "edit-supplier") {
         email: firstSupplier.email || "",
         alias: firstSupplier.alias || "",
         postal_code: firstSupplier.postal_code || "",
-        // files: firstSupplier.files || [],
+        is_deleted: false, 
     },
     };
 }

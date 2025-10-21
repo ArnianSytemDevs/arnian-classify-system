@@ -79,5 +79,13 @@
         "btnUpdate":"Actualizar clientes",
         "btnDelete":"Eliminar clientes",
         "btnGet":"Listado de clientes"
+    },
+    "Suppliers":{
+        "btnCreate":"Crear proveedores",
+        "btnUpdate":"Actualizar proveedores",
+        "btnDelete":"Eliminar proveedores",
+        "btnGet":"Listado de proveedores",
+        "alerSucces":"El proveedor ha sido creado con éxito",
+        "alertError":"Se produjo un error al crear el proveedor, inténtelo nuevamente más tarde"
     }
 }

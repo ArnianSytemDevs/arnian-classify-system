@@ -3,6 +3,7 @@ import { ProductInitialState, ProductReducer, type ProductsActions, type Product
 import { EntryInitialState, EntryReducer, type EntrysActions, type EntryState } from "../reducers/entry-reducer"
 import { ClassifyInitialState, type ClassifyActions, ClassifyReducer, type ClassifyState } from "../reducers/classify-reducer"
 import { ClientsInitialState, ClientsReducer, type ClientsActions, type ClientsState } from "../reducers/clients-reducer"
+import { SupplierInitialState, SupplierReducer, type SupplierActions, type SupplierState } from "../reducers/suppliers-reducer"
 
 type ClassifyContextProops ={
     selectedWindow:number
@@ -15,6 +16,8 @@ type ClassifyContextProops ={
     classifyDispatch: Dispatch<ClassifyActions>
     clientsState: ClientsState
     clientsDispatch: Dispatch<ClientsActions>
+    suppliersState: SupplierState
+    suppliersDispatch: Dispatch<SupplierActions>
 }
 
 type ClassifyContextProvidersProops = {
@@ -30,6 +33,7 @@ export const ClassifyProvider = ({children}: ClassifyContextProvidersProops) => 
     const [entryState,entryDispatch] = useReducer(EntryReducer,EntryInitialState)
     const [classifyState,classifyDispatch] = useReducer(ClassifyReducer,ClassifyInitialState)
     const [clientsState,clientsDispatch] = useReducer(ClientsReducer,ClientsInitialState)
+    const [suppliersState, suppliersDispatch] = useReducer(SupplierReducer,SupplierInitialState)
     return(
         <ClassifyContext.Provider
             value={{
@@ -42,7 +46,9 @@ export const ClassifyProvider = ({children}: ClassifyContextProvidersProops) => 
                 classifyState,
                 classifyDispatch,
                 clientsState,
-                clientsDispatch
+                clientsDispatch,
+                suppliersState,
+                suppliersDispatch
             }}
         >
             {children}

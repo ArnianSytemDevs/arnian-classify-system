@@ -3,6 +3,7 @@ import { useClassifyContext } from '../../hooks/useClassifyContext'
 import Clients from '../Clients/Clients'
 import Entrys from '../Entrys/Entrys'
 import Products from '../Products/Products'
+import Suppliers from '../Suppliers/Suppliers'
 
 export default function Dashboard() {
   
@@ -16,6 +17,7 @@ export default function Dashboard() {
       {selectedWindow == 0 || selectedWindow == 1? <Products/> : <></> }
       {selectedWindow == 2? <Entrys /> : <></> }
       {selectedWindow == 3? <Clients /> : <></> }
+      {selectedWindow == 4? <Suppliers /> : <></> }
     </div>
     </div>    
     </>
