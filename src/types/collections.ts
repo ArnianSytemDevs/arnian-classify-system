@@ -32,6 +32,12 @@ export type Entry = {
     id_client: any;
     created: string;
     updated: string; 
+    subtotal: number;
+    packing_price: number;
+    other_price: number;
+    total: number;
+    total_limbs: number;
+    net_weight_total: number;
 }
 
 export type Classification = {

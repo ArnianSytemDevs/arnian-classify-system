@@ -220,13 +220,15 @@ export class ClassifyController {
         return formatted;
     }
 
-    public static async saveClassificationBatch(
-    entryId: string,
-    products: classifyProduct[],
-    classifyDispatch: Dispatch<ClassifyActions>
-    ) {
+    public static async saveClassificationBatch( entryId: string, products: classifyProduct[], classifyDispatch: Dispatch<ClassifyActions>, financialTotals?: {
+        subtotal: number;
+        packing_price: number;
+        other_price: number;
+        total: number;
+        total_limbs: number;
+        net_weight_total: number;
+    }) {
     const readyToSave = products.filter((p) => !p.edit);
-    console.log("🚀 ~ ClassifyController ~ saveClassificationBatch ~ readyToSave:", readyToSave)
 
     if (readyToSave.length === 0)
         throw new Error("No hay productos listos para guardar");
@@ -240,7 +242,7 @@ export class ClassifyController {
 
     for (const p of readyToSave) {
         try {
-        // 🧠 Construir el cuerpo de datos
+        // 🧠 Construir el cuerpo de datos para PocketBase
         const data = {
             public_key: p.public_key,
             id_entry: entryId,
@@ -265,17 +267,17 @@ export class ClassifyController {
                 ? p.type_weight.id
                 : p.type_weight || null,
             partys: Number(p.parts_number) || 0,
-            field: 0 // si existe en tu modelo, puedes ajustar
+            field: 0 // Si tu modelo lo requiere
         };
 
         let record;
 
-        // 🔍 1️⃣ Verificar si ya tenemos el ID guardado localmente
+        // 🔍 Actualizar si existe id_pocketbase
         if (p.id_pocketbase) {
             record = await pb.collection("Classiffication").update(p.id_pocketbase, data);
             results.push({ id: record.id, public_key: p.public_key, status: "updated" });
         } else {
-            // 🔍 2️⃣ Buscar por public_key para evitar duplicados
+            // Buscar por public_key
             const existing = await pb.collection("Classiffication").getList(1, 1, {
             filter: `public_key = "${p.public_key}"`,
             });
@@ -289,7 +291,7 @@ export class ClassifyController {
             }
         }
 
-        // ✅ 3️⃣ Actualizar estado local de sincronización
+        // ✅ Actualizar estado local
         classifyDispatch({
             type: "edit-product",
             payload: {
@@ -301,10 +303,11 @@ export class ClassifyController {
             },
             },
         });
+
         } catch (error: any) {
         console.error(`❌ Error sincronizando ${p.public_key}:`, error);
 
-        // ⚠️ 4️⃣ Marcar error en estado local
+        // ⚠️ Marcar error en estado local
         classifyDispatch({
             type: "edit-product",
             payload: {
@@ -325,8 +328,25 @@ export class ClassifyController {
         }
     }
 
+    // ✅ Guardar datos financieros si están presentes
+    if (financialTotals) {
+        try {
+        await pb.collection("Entrys").update(entryId, {
+            subtotal: financialTotals.subtotal,
+            packing_price: financialTotals.packing_price,
+            other_price: financialTotals.other_price,
+            total: financialTotals.total,
+            total_limbs: financialTotals.total_limbs,
+            net_weight_total: financialTotals.net_weight_total,
+        });
+        } catch (err) {
+        console.error("❌ Error al guardar datos financieros de la entrada:", err);
+        }
+    }
+
     return results;
     }
+
 
 
     public static async getClassifyByEntry(idEntry: string): Promise<classifyProduct[]> {
@@ -342,7 +362,6 @@ export class ClassifyController {
         list.map(async (item: any) => {
             const product = item.expand?.id_product || {};
             const infoprod = await getProduct(item.id_product);
-            console.log(item)
             // 🧭 Unit weight y unit type
             const unitWeightObj =
             item.expand?.unit_weight
@@ -365,7 +384,6 @@ export class ClassifyController {
                     phone_number: product.expand.id_supplier.phone_number,
                 }
                 : await getSupplierData(product.id_supplier);
-            console.log("🚀 ~ ClassifyController ~ getClassifyByEntry ~ supplierObj:", supplierObj)
 
             // 🗺️ Países
             const originCountry = (() => {

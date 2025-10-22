@@ -14,7 +14,9 @@ export type ClassifyActions =
   | { type: "change-country-product"; payload: { public_key: string; field: string; value: string } }
   | { type: "set-edit-data"; payload: { public_key: string } }
   | { type: "set-product-classify-data"; payload: { products: classifyProduct[] } }
+  | { type: "update-entry-financials"; payload: Partial<Entry> }
   | { type: "clear-all" };
+
 
 export type ClassifyState = {
   entrySelected: Entry;
@@ -35,6 +37,12 @@ export const ClassifyInitialState: ClassifyState = {
     id_client: "",
     created: "",
     updated: "",
+    subtotal:0,
+    packing_price:0,
+    other_price:0,
+    total:0,
+    total_limbs:0,
+    net_weight_total:0
   },
   products: [],
 };
@@ -194,6 +202,16 @@ export const ClassifyReducer = (
     // 🔄 Reset total
     case "clear-all":
       return { ...ClassifyInitialState };
+
+    case "update-entry-financials":
+      return {
+        ...state,
+        entrySelected: {
+          ...state.entrySelected,
+          ...action.payload,
+      },
+    };
+
 
     default:
       return state;
