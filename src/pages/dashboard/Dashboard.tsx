@@ -11,9 +11,9 @@ export default function Dashboard() {
 
   return (
     <>
-    <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
+    <div className=' w-screen h-screen flex flex-row dark:bg-gray-500  ' >
     <MenuComponent />
-    <div className='w-full h-full' >
+    <div className='w-full h-full max-h-[%100] overscroll-auto ' >
       {selectedWindow == 0 || selectedWindow == 1? <Products/> : <></> }
       {selectedWindow == 2? <Entrys /> : <></> }
       {selectedWindow == 3? <Clients /> : <></> }

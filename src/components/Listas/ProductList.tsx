@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ProductListController from "./ProductList.controller";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
-import type { Status, Supplier } from "../../types/collections";
+import type { Product, Status, Supplier } from "../../types/collections";
 import type { productFilters } from "../../types/forms";
 import {
     Modal,
@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import { FaFilter } from "react-icons/fa";
 import type { SelectChangeEvent } from "@mui/material";
+import { pb } from "../../helpers/pocketbase/pocketbase";
+import NoPhoto from "../../assets/NotPhoto.png"
 
 type ProductListProops = {
     status: Status[];
@@ -46,7 +48,7 @@ export default function ProductList({ status }: ProductListProops) {
 
     // ✅ estilos coherentes
     const thBody =
-        "px-5 py-4 text-sm font-mono font-light text-left text-gray-800 dark:text-gray-200";
+        "px-5 py-4 text-sm font-mono font-light text-left text-gray-800 dark:text-gray-200 ";
     const thHead =
         "px-5 py-2 font-semibold transition text-left text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-t-md";
     const inputText = {
@@ -126,21 +128,58 @@ export default function ProductList({ status }: ProductListProops) {
         }
     };
 
+    const renderImage = (file:string,record:Product) => {
+        const lower = file[0].toLowerCase();
+        const url = pb.files.getURL(record, file);
+
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+        return (
+            <img
+            src={url || NoPhoto}
+            alt={file}
+            className="w-20 h-20 object-cover rounded border"
+            />
+        );
+        }
+
+        if (lower.endsWith(".pdf")) {
+        return (
+            <div className="flex flex-col items-center text-red-500">
+            📄 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+        );
+        }
+
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+        return (
+            <div className="flex flex-col items-center text-blue-500">
+            📝 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+        );
+        }
+
+        return (
+        <div className="flex flex-col items-center text-gray-500">
+            📦 <span className="text-xs truncate w-20">{file}</span>
+        </div>
+        );
+    }
+
     return (
         <>
-            <table className="w-full border-collapse">
-                <thead className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-slate-800">
+            <div className="overflow-y-auto max-h-[calc(100vh-80px)] w-full">
+                <table className="w-full border-collapse">
+                    <thead className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
                     <tr>
-                        <th className="px-2 py-2 rounded-t-md font-semibold transition text-gray-700 dark:text-gray-200">
-                            <button
-                                className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition"
-                                onClick={() => {
-                                    setOpenMod(true);
-                                }}
-                            >
-                                <FaFilter className="text-gray-600 dark:text-cyan-300" />
-                            </button>
+                        <th className="px-2 py-2 font-semibold text-gray-700 dark:text-gray-200">
+                        <button
+                            className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition"
+                            onClick={() => setOpenMod(true)}
+                        >
+                            <FaFilter className="text-gray-600 dark:text-cyan-300" />
+                        </button>
                         </th>
+                        <th className={thHead}></th>
                         <th className={thHead}>Alias</th>
                         <th className={thHead}>Name</th>
                         <th className={thHead}>Code</th>
@@ -149,43 +188,48 @@ export default function ProductList({ status }: ProductListProops) {
                         <th className={thHead}>Description</th>
                         <th className={thHead}>Status</th>
                     </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    </thead>
+
+                    <tbody className="divide-y divide-x divide-gray-200 dark:divide-gray-500">
                     {products.map((p) => (
                         <tr
-                            key={p.id}
-                            className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                        key={p.id}
+                        className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
                         >
-                            <td className={thBody}>
-                                <input
-                                    className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                                    type="checkbox"
-                                    onChange={(e) => {
-                                        productDispatch({
-                                            type: "change-box",
-                                            payload: {
-                                                product: p,
-                                                status: e.target.checked,
-                                            },
-                                        });
-                                    }}
-                                />
-                            </td>
-                            <td className={thBody}>{p.alias}</td>
-                            <td className={thBody}>{p.name}</td>
-                            <td className={thBody}>{p.code}</td>
-                            <td className={thBody}>{p.brand}</td>
-                            <td className={thBody}>{p.model}</td>
-                            <td className={thBody}>{p.description}</td>
-                            <td className={thBody}>
-                                {status.length !== 0
-                                    ? status.find((st) => st.id === p.id_status)?.name || "N/A"
-                                    : "N/A"}
-                            </td>
+                        <td className={thBody}>
+                            <input
+                            className="w-5 h-5 accent-cyan-600 cursor-pointer"
+                            type="checkbox"
+                            onChange={(e) =>
+                                productDispatch({
+                                type: "change-box",
+                                payload: { product: p, status: e.target.checked },
+                                })
+                            }
+                            />
+                        </td>
+                        <td className={thBody}>{renderImage(p.files, p)}</td>
+                        <td className={thBody}>{p.alias}</td>
+                        <td className={thBody}>{p.name}</td>
+                        <td className={thBody}>{p.code}</td>
+                        <td className={thBody}>{p.brand}</td>
+                        <td className={thBody}>{p.model}</td>
+                        <td className={thBody + " max-w-70 line-clamp-3"}>{p.description}</td>
+                        <td
+                            className={thBody}
+                            style={{
+                            color: `#${status.find((st) => st.id === p.id_status)?.color || "FFF"}`,
+                            fontWeight: "bold",
+                            }}
+                        >
+                            {status.find((st) => st.id === p.id_status)?.name || "N/A"}
+                        </td>
                         </tr>
                     ))}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
+
 
 
             {/* ✅ Modal adaptado a light/dark */}

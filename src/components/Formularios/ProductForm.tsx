@@ -128,7 +128,7 @@ const renderPreview = (file: File | string) => {
 
       // ⚠️ Aquí necesitas el record completo, no solo el id
       const record = productState.productList[0]; // o el producto actual
-      const url = pb.files.getUrl(record, file);
+      const url = pb.files.getURL(record, file);
 
       if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
         return (
@@ -344,7 +344,7 @@ const renderPreview = (file: File | string) => {
 
                       <div
                         className="w-[100%] h-[100%] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-3"
-                        onClick={() => window.open(mode == 'edit'? pb.files.getUrl(productState.productList[0], file.toString()) : URL.createObjectURL(file))}
+                        onClick={() => window.open(mode == 'edit'? pb.files.getURL(productState.productList[0], file.toString()) : URL.createObjectURL(file))}
                       >
                         {renderPreview(file)}
                         <span className="mt-2 text-xs truncate w-24">{mode == 'edit' ? file.toString() : file.name}</span>

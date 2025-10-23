@@ -19,6 +19,8 @@ import { useNavigate } from "react-router";
 import { usePreventNavigation } from "../../hooks/ReturnAlert";
 import { FaPlusSquare } from "react-icons/fa";
 import ProductForm from "../../components/Formularios/ProductForm";
+import { pb } from "../../helpers/pocketbase/pocketbase";
+import NoPhoto from '../../assets/NotPhoto.png'
 
 export default function Classify() {
 
@@ -439,6 +441,43 @@ export default function Classify() {
         });
     }
 
+    const renderImage = (file:any,record:Product) => {
+            const lower = file[0].toLowerCase();
+            const url = pb.files.getURL(record, file);
+    
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+                <img
+                src={url || NoPhoto}
+                alt={file}
+                className="w-20 h-20 object-cover rounded border"
+                />
+            );
+            }
+    
+            if (lower.endsWith(".pdf")) {
+            return (
+                <div className="flex flex-col items-center text-red-500">
+                📄 <span className="text-xs truncate w-20">{file}</span>
+                </div>
+            );
+            }
+    
+            if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+                <div className="flex flex-col items-center text-blue-500">
+                📝 <span className="text-xs truncate w-20">{file}</span>
+                </div>
+            );
+            }
+    
+            return (
+            <div className="flex flex-col items-center text-gray-500">
+                📦 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+
     return (
         <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
             <MenuComponent />
@@ -595,16 +634,31 @@ export default function Classify() {
                         <li
                         {...props}
                         key={option.id}
-                        className="flex flex-col w-full px-3 py-2 hover:bg-gray-300 dark:hover:bg-slate-700 dark:hover:text-white transition-colors rounded-md"
+                        className="
+                            flex items-center gap-4 w-full px-4 py-3
+                            rounded-lg border border-gray-200
+                            bg-white
+                            hover:bg-gray-100 dark:hover:bg-slate-700
+                            dark:hover:text-gray-200
+                            hover:shadow-md transition-all duration-200 cursor-pointer
+                        "
                         >
-                        <span className="font-semibold text-sm">{option.name || "Sin nombre"}</span>
-                        <span className="text-xs mt-1">
-                            Marca: <span className="font-medium">{option.brand || "N/A"}</span> — Modelo:{" "}
-                            <span className="font-medium">{option.model || "N/A"}</span>
-                        </span>
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                        {/* 🖼️ Imagen */}
+                        <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                            {renderImage(option.files, option)}
+                        </div>
+
+                        {/* 🧾 Info */}
+                        <div className="flex flex-col flex-grow min-w-0">
+                            <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
+                            Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
+                            </span>
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
                             Precio: ${Number(option.unit_price || 0).toFixed(2)}
-                        </span>
+                            </span>
+                        </div>
                         </li>
                     )}
                     renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
@@ -849,6 +903,22 @@ export default function Classify() {
                             <td className={thBody}>
                                 <FormControl>
                                     <Switch
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked": {
+                                            color: p.damage ? "#fd2b2b" : "#2bdcfd", // color del thumb
+                                            "&:hover": {
+                                                backgroundColor: p.damage
+                                                ? "rgba(253,43,43,0.1)"
+                                                : "rgba(43,220,253,0.1)", // halo al pasar el mouse
+                                            },
+                                            },
+                                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                                            backgroundColor: p.damage ? "#fd2b2b" : "#2bdcfd", // color del track
+                                            },
+                                            "& .MuiSwitch-track": {
+                                            backgroundColor: p.damage ? "#fdaaaa" : "#aef6fd", // color del track desactivado
+                                            },
+                                        }}
                                         id="damage"
                                         name="damage"
                                         disabled={!p.edit}

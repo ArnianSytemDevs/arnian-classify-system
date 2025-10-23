@@ -20,7 +20,7 @@ export class ClientsFormController {
             // =======================================================
             if (mode === "edit" && clientSel?.image?.length > 0) {
                 for (let i = 0; i < clientSel.image.length; i++) {
-                const oldFileUrl = pb.files.getURL(clientSel, clientSel.image[i]); // ✅ usar getURL (con mayúscula)
+                const oldFileUrl = pb.files.getURL(clientSel, clientSel.image[i]);
                 const response = await fetch(oldFileUrl);
 
                 if (!response.ok) {
