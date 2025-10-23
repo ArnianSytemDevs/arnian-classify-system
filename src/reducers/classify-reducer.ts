@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import type { Entry } from "../types/collections";
 import type { classifyProduct } from "../types/forms";
 
@@ -15,6 +16,7 @@ export type ClassifyActions =
   | { type: "set-edit-data"; payload: { public_key: string } }
   | { type: "set-product-classify-data"; payload: { products: classifyProduct[] } }
   | { type: "update-entry-financials"; payload: Partial<Entry> }
+  | { type:"change-damaage", payload : { e: ChangeEvent<HTMLInputElement>, productId:string} }
   | { type: "clear-all" };
 
 
@@ -85,6 +87,7 @@ export const ClassifyReducer = (
             item: "",
             limps: 0,
             edit: true,
+            damage:false,
           } as classifyProduct,
         ],
       };
@@ -212,6 +215,20 @@ export const ClassifyReducer = (
       },
     };
 
+    case "change-damaage":
+      const { name, checked } = action.payload.e.target;
+      const   public_key = action.payload.productId
+      return{
+        ...state,
+        products: state.products.map((p) =>
+          p.public_key === public_key
+            ? {
+                ...p,
+                [name]:checked
+              }
+            : p
+        ),
+      }
 
     default:
       return state;

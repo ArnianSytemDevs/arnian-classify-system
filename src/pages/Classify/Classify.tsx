@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ArnLogo from "../../assets/ArnianLogo.png";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, FormControl, Switch, TextField } from "@mui/material";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { FaTrashAlt, FaSave } from "react-icons/fa";
 import type { Supplier, Clients, Measurement, Units, Product } from "../../types/collections";
@@ -89,15 +89,15 @@ export default function Classify() {
             payload: { subtotal: Number(subtotal) },
         })
     }, [classifyState.products]);
-
+    
     useEffect(()=>{
         const total = classifyState.entrySelected.other_price + classifyState.entrySelected.packing_price + classifyState.entrySelected.subtotal
-
+    
         classifyDispatch({
             type: "update-entry-financials",
             payload: { total: Number(total) },
         })
-    },[classifyState])
+    },[classifyState.entrySelected.other_price || classifyState.entrySelected.packing_price || classifyState.entrySelected.subtotal])
 
     useEffect(() => {
     const fetchClassifyData = async () => {
@@ -171,14 +171,23 @@ export default function Classify() {
 
     // 🔹 Buscar productos conforme se escribe
     useEffect(() => {
-        if (inputProduct) {
-        ClassifyController.getProducts(inputProduct)
+        // ⏳ Si no hay texto, limpiamos los productos inmediatamente
+        if (!inputProduct) {
+            setProducts([]);
+            return;
+        }
+
+        // 🕒 Creamos el temporizador de 3 segundos
+        const delayDebounce = setTimeout(() => {
+            ClassifyController.getProducts(inputProduct)
             .then((resp: any) => setProducts(resp))
             .catch((err) => console.error("❌ Error al buscar productos:", err));
-        } else {
-        setProducts([]);
-        }
+        }, 2000);
+
+        // 🧹 Limpiamos el timeout si el usuario sigue escribiendo
+        return () => clearTimeout(delayDebounce);
     }, [inputProduct]);
+
 
     // 🔹 Cuando se selecciona un producto en el buscador global
     const handleAddProduct = async (product: Product | null) => {
@@ -423,7 +432,7 @@ export default function Classify() {
         if (result.isConfirmed) {
             classifyDispatch({ type: "clear-all" })
             entryDispatch({ type: 'clear-state' })
-            navigate("/dashboard")
+            window.location.reload
         } else {
             return "a"
         }
@@ -605,7 +614,6 @@ export default function Classify() {
                         className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
                     > <FaPlusSquare /> </button>
 
-                    <p>Cantidad total: {  } </p>
                 </div>
 
                 {/* 🧾 TABLA DE PRODUCTOS */}
@@ -627,6 +635,7 @@ export default function Classify() {
                             `${t("Classify.list.lblGross_weight")}`,
                             `${t("Classify.list.lblNet_weight")}`,
                             `${t("Classify.list.lblUnit_weight")}`,
+                            `${t("Classify.list.lblDamage")}`,
                             `${t("Classify.list.lblBrand")}`,
                             `${t("Classify.list.lblModel")}`,
                             `${t("Classify.list.lblNo_Series")}`,
@@ -837,7 +846,17 @@ export default function Classify() {
                                 )}
                             />
                             </td>
-
+                            <td className={thBody}>
+                                <FormControl>
+                                    <Switch
+                                        id="damage"
+                                        name="damage"
+                                        disabled={!p.edit}
+                                        checked={p.damage}
+                                        onChange={(e)=>{ classifyDispatch({type:"change-damaage", payload: {e:e, productId:p.public_key}})}}
+                                    />
+                                </FormControl>
+                            </td>
                             <td className={thBody}>{p.brand || "-"}</td>
                             <td className={thBody}>{p.model || "-"}</td>
                             <td className={thBody}>{p.serial_number || "-"}</td>

@@ -1,7 +1,7 @@
 import PocketBase from "pocketbase";
 
-// export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "http://localhost:8090");
-export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "https://classify-app.pockethost.io/");
+export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "http://localhost:8090");
+// export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "https://classify-app.pockethost.io/");
 
 /* =======================================================
   HELPERS
@@ -13,7 +13,8 @@ export type FilterOptions = {
   status?: string;
   created?: string;
   updated?: string;
-  deprected?: boolean
+  deprected?: boolean;
+  is_deleted?: boolean;
 };
 
 export default function buildFilter(filters?: FilterOptions): string {
@@ -24,7 +25,9 @@ export default function buildFilter(filters?: FilterOptions): string {
   if (filters.public_key) parts.push(`public_key = "${filters.public_key}"`);
   if (filters.name) parts.push(`name ~ "${filters.name}"`);
   if (filters.status) parts.push(`status = "${filters.status}"`);
+  if (filters.deprected) parts.push(`deprected ="${filters.deprected}"`)
   if (filters.created) parts.push(`created >= "${filters.created}"`);
+  if (filters.is_deleted) parts.push(`is_deleted = "${filters.is_deleted}"`);
   if (filters.updated) parts.push(`updated >= "${filters.updated}"`);
 
   return parts.join(" && ");

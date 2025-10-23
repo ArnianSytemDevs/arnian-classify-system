@@ -66,7 +66,8 @@
             "lblParty":"Partidas",
             "lblItem":"Item",
             "lblLumps":"Bultos",
-            "lblTotalValue":"Valor total"
+            "lblTotalValue":"Valor total",
+            "lblDamage":"Dañado?"
         }
     },
     "Users":{

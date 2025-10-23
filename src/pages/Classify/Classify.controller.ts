@@ -123,7 +123,6 @@ export class ClassifyController {
         }
     }
 
-
     /**
      * Carga inicial de datos base (proveedores, clientes y unidades).
      * Ideal para usar en un `useEffect` al montar la vista principal.
@@ -151,18 +150,18 @@ export class ClassifyController {
         }
 
     }
+
     public static async getProducts(nameFilter:string){
         try {
             let list;
 
             if (nameFilter) {
                 // Filtrar por nombre parcial o exacto
-                list = await getProductsList(undefined, undefined, { name: nameFilter });
+                list = await getProductsList(undefined, undefined, { name: nameFilter, deprected:false, is_deleted:false });
             } else {
                 // Cargar todas las unidades disponibles
                 list = await getProductsList();
             }
-
             return list?.items ?? [];
         } catch (error) {
             console.error("❌ Error al obtener unidades de medida:", error);
@@ -253,6 +252,7 @@ export class ClassifyController {
             lumps: Number(p.limps),
             item: String(p.item),
             comments: "",
+            damage:Boolean(p.damage),
             origin_country: JSON.stringify(p.origin_country || {}),
             origin_seller: JSON.stringify(p.seller_country || {}),
             quantity: Number(p.quantity),
@@ -406,6 +406,7 @@ export class ClassifyController {
             }
             })();
 
+            console.log("🚀 ~ ClassifyController ~ getClassifyByEntry ~ item.is_damage:", item)
             return {
             public_key: item.public_key,
             id_product: item.id_product,
@@ -413,6 +414,7 @@ export class ClassifyController {
             batch: item.batch || "",
             name: infoprod?.name || "",
             quantity: Number(item.quantity) || 0,
+            damage:Boolean(item.damage),
 
             // ✅ coherente con tus reducers
             id_supplier: supplierObj?.id || "",
