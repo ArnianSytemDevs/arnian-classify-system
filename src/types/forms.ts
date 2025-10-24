@@ -86,6 +86,7 @@ export type classifyProduct = {
     synced?: boolean;
     syncError?: string | null;
     id_pocketbase?: string | null;
+    damage:boolean
 };
 
 // Asegúrate de que tu tipo tenga public_key

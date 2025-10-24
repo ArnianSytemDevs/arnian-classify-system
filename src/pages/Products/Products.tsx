@@ -44,7 +44,7 @@ export default function Products() {
 
 return (
     <>
-        <div className="w-full h-full flex flex-row">
+        <div className="w-full h-full flex flex-row ">
             <div className="bg-gray-50 dark:bg-slate-800 h-full w-[20%] items-start p-5 
                             text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600">
                 <button className="p-5 w-full items-center border-b border-gray-300 dark:border-gray-600" >{t("submenu")}</button>
@@ -65,8 +65,8 @@ return (
                 </div>
                 <ProductList status={status} />
             </div>
+            <ProductForm setOpenModal={setOpen} openModal={open} mode={mode} />
         </div>
-        <ProductForm setOpenModal={setOpen} openModal={open} mode={mode} />
     </>
 )
 }

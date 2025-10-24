@@ -65,7 +65,9 @@
             "lblFractionMX":"Fracción arancelaria",
             "lblParty":"Partidas",
             "lblItem":"Item",
-            "lblLumps":"Bultos"
+            "lblLumps":"Bultos",
+            "lblTotalValue":"Valor total",
+            "lblDamage":"Dañado?"
         }
     },
     "Users":{

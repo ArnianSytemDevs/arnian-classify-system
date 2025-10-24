@@ -55,7 +55,7 @@ export class entryFormController {
             typeof entryForm.files[0] === "string"
         ) {
             for (const fileName of entryForm.files as string[]) {
-            const oldFileUrl = pb.files.getUrl(entrySel ?? entryForm, fileName);
+            const oldFileUrl = pb.files.getURL(entrySel ?? entryForm, fileName);
             const response = await fetch(oldFileUrl);
 
             if (!response.ok) {
