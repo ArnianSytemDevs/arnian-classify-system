@@ -151,20 +151,26 @@ export class ClassifyController {
 
     }
 
-    public static async getProducts(nameFilter:string){
+    public static async getProducts(nameFilter: string) {
         try {
             let list;
 
             if (nameFilter) {
-                // Filtrar por nombre parcial o exacto
-                list = await getProductsList(undefined, undefined, { name: nameFilter, deprected:false, is_deleted:false });
+            list = await getProductsList(undefined, undefined, {
+                name: nameFilter,
+                deprecated: false,
+                is_deleted: false,
+            });
             } else {
-                // Cargar todas las unidades disponibles
-                list = await getProductsList();
+            list = await getProductsList(1, 10, {
+                deprecated: false,
+                is_deleted: false,
+            }, true);
             }
+
             return list?.items ?? [];
         } catch (error) {
-            console.error("❌ Error al obtener unidades de medida:", error);
+            console.error("❌ Error al obtener productos:", error);
             return [];
         }
     }
@@ -406,7 +412,6 @@ export class ClassifyController {
             }
             })();
 
-            console.log("🚀 ~ ClassifyController ~ getClassifyByEntry ~ item.is_damage:", item)
             return {
             public_key: item.public_key,
             id_product: item.id_product,

@@ -7,6 +7,8 @@ import { TiMinusOutline } from "react-icons/ti";
 import { entryFormController } from './EntryForm.controller';
 import type { Clients, Status, Supplier } from '../../types/collections';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
+import { pb } from '../../helpers/pocketbase/pocketbase';
+import { FaRegWindowClose } from "react-icons/fa";
 
 type EntryFormProops = {
     openModal:boolean;
@@ -24,58 +26,93 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     const [inputValue, setInputValue] = useState("");
     const [inputCValue, setInputCValue] = useState("");
     const inputText = {
-        "& .MuiInputBase-root": {
-            color: "text.primary", // hereda del tema
-            backgroundColor: "background.paper",
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
         },
-        "& .MuiInputLabel-root": {
-            color: "text.secondary",
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
         },
-        "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "divider",
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
         },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "#06b6d4", // cyan-500
-        },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: "#0891b2", // cyan-600
-        },
-    }
+    },
+    "& .MuiInputBase-root": {
+        color: "text.primary",
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
     
+    // 🔹 Buscar proveedores con retardo (debounce)
     useEffect(() => {
-        if(openModal && mode == "create" || mode == "edit" ){
-            if (inputValue.trim() !== "") {
-                entryFormController.getSuppliers(inputValue,mode).then((resp: any) => {
-                    setSuppliers(resp);
-                });
-            } else {
-                setSuppliers([]);
-            }
+    // Verifica que el modal esté abierto y el modo sea válido
+    if (!(openModal && (mode === "create" || mode === "edit"))) return;
+
+    const delay = setTimeout(() => {
+        const trimmed = inputValue.trim();
+
+        if (trimmed !== "") {
+        entryFormController.getSuppliers(trimmed, mode)
+            .then((resp: any) => setSuppliers(resp))
+            .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+        } else {
+        setSuppliers([]); // limpia si no hay texto
         }
-    }, [inputValue]);
+    }, 800); // 800 ms de espera
+
+    // Limpia el timeout al escribir otra vez o desmontar
+    return () => clearTimeout(delay);
+    }, [inputValue, openModal, mode]);
+
+
+    // 🔹 Buscar clientes con retardo (debounce)
+    useEffect(() => {
+    if (!(openModal && (mode === "create" || mode === "edit"))) return;
+
+    const delay = setTimeout(() => {
+        const trimmed = inputCValue.trim();
+
+        if (trimmed !== "") {
+        entryFormController.getClient(trimmed, mode)
+            .then((resp: any) => setClients(resp))
+            .catch((err) => console.error("❌ Error al cargar clientes:", err));
+        } else {
+        setClients([]); // limpia si no hay texto
+        }
+    }, 800);
+
+    return () => clearTimeout(delay);
+    }, [inputCValue, openModal, mode]);
+
 
     useEffect(() => {
-        if(openModal && mode == "create" || mode == "edit" ){
-            if (inputCValue.trim() !== "") {
-                entryFormController.getClient(inputCValue,mode).then((resp: any) => {
-                    setClients(resp);
-                });
-            } else {
-                setClients([])
-            }
-        }
-    }, [inputCValue]);
+    const fetchData = async () => {
+        // Verificamos condiciones antes de ejecutar
+        if (!openModal || mode !== "edit") return;
 
-    useEffect(()=>{
-        if( openModal && mode == "edit" ){
-            entryFormController.getClient(entryState.entryList[0].id_client,mode).then((resp: any) => {
-                setClients(resp);
-            });
-            entryFormController.getSuppliers(entryState.entryList[0].id_supplier,mode).then((resp: any) => {
-                setSuppliers(resp);
-            });
+        const entry = entryState.entryList[0];
+        if (!entry || !entry.id_client || !entry.id_supplier) return;
+
+        try {
+        const [clientResp, supplierResp] :any= await Promise.all([
+            entryFormController.getClient(entry.id_client, mode),
+            entryFormController.getSuppliers(entry.id_supplier, mode),
+        ]);
+
+        setClients(clientResp);
+        setSuppliers(supplierResp);
+        } catch (err) {
+        console.error("❌ Error al cargar datos de cliente o proveedor:", err);
         }
-    },[openModal])
+    };
+
+    fetchData();
+    }, [openModal, mode, entryState.entryList]);
+
 
     useEffect(()=>{
         if(openModal == true && mode == 'edit' && status.length != 0 && suppliers.length != 0 && clients.length != 0){
@@ -106,6 +143,89 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         })
     }
 
+    const renderPreview = (file: File | string) => {
+        // 📌 Caso 1: cuando es File del navegador
+        if (file instanceof File) {
+        const fileType = file.type;
+
+        if (fileType.startsWith("image/")) {
+            return (
+            <img
+                src={URL.createObjectURL(file)}
+                alt={file.name}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+
+        if (fileType === "application/pdf") {
+            return <span className="text-red-500 text-2xl">📄</span>;
+        }
+
+        if (
+            fileType.includes("word") ||
+            fileType.includes("officedocument") ||
+            fileType.includes("msword")
+        ) {
+            return <span className="text-blue-500 text-2xl">📝</span>;
+        }
+
+        return <span className="text-gray-500 text-2xl">📦</span>;
+        }
+
+        // 📌 Caso 2: cuando es string desde PocketBase
+        if (typeof file === "string") {
+        const lower = file.toLowerCase();
+
+        // ⚠️ Aquí necesitas el record completo, no solo el id
+        const record = entryState.entryList[0]; // o el producto actual
+        const url = pb.files.getURL(record, file);
+
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+            <img
+                src={url}
+                alt={file}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+
+        if (lower.endsWith(".pdf")) {
+            return (
+            <div className="flex flex-col items-center text-red-500">
+                📄 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+            <div className="flex flex-col items-center text-blue-500">
+                📝 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+
+        return (
+            <div className="flex flex-col items-center text-gray-500">
+            📦 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+        );
+        }
+
+        return null;
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            entryDispatch({
+            type: "add-files",
+            payload: { files: e.target.files },
+            });
+        }
+    };
+
     return (
         <Modal open={openModal} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <div className="flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300dark:bg-slate-800 dark:text-cyan-300">
@@ -128,8 +248,9 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                 </div>
                 <div className=" overflow-auto p-5 dark:bg-slate-800">
                     <form className=" grid grid-cols-2 gap-5 " >
-                        <TextField sx={inputText} type="text" name="invoice_number" id="invoice_number" value={entryState.entryForm.invoice_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.invoice")} />
-                        <TextField sx={inputText} type="text" name="tax_id" id="tax_id" value={entryState.entryForm.tax_id} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label="TAX" />
+                        <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.public_key")} />
+                        <TextField sx={inputText} variant='filled' type="text" name="invoice_number" id="invoice_number" value={entryState.entryForm.invoice_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.invoice")} />
+                        <TextField sx={inputText} variant='filled' type="text" name="tax_id" id="tax_id" value={entryState.entryForm.tax_id} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label="TAX" />
                         <Autocomplete
                             className="w-full"
                             id="id_supplier"
@@ -151,7 +272,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                             });
                             }}
                             renderInput={(params) => (
-                            <TextField sx={inputText}  {...params} required label={t("Entrys.form.supplier")} />
+                            <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.supplier")} />
                             )}
                         />
                         <Autocomplete
@@ -175,9 +296,54 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                             });
                             }}
                             renderInput={(params) => (
-                            <TextField sx={inputText}  {...params} required label={t("Entrys.form.client")} />
+                            <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.client")} />
                             )}
                         />
+
+                        <div className="col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
+                            Archivos
+                            </label>
+                            <input
+                            type="file"
+                            multiple
+                            onChange={handleFileChange}
+                            className="mb-4"
+                            />
+            
+                            {entryState.entryForm.files.length > 0 && (
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                {entryState.entryForm.files.map((file: File) => (
+                                <div
+                                    key={file.name || file.toString()  }
+                                    className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
+                                >
+                                    <button
+                                    className="cursor-pointer hover:bg-red-300 self-end"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        entryDispatch({
+                                        type: "delete-file",
+                                        payload: { file: file.name },
+                                        });
+                                    }}
+                                    >
+                                    <FaRegWindowClose className="text-md text-red-500 cursor" />
+                                    </button>
+            
+                                    <div
+                                    className="w-[100%] h-[100%] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-3"
+                                    onClick={() => window.open(mode == 'edit'? pb.files.getURL(entryState.entryList[0], file.toString()) : URL.createObjectURL(file))}
+                                    >
+                                    {renderPreview(file)}
+                                    <span className="mt-2 text-xs truncate w-24">{mode == 'edit' ? file.toString() : file.name}</span>
+                                    </div>
+                                </div>
+                                ))}
+                            </div>
+                            )}
+            
+                        </div>
                     </form>
                 </div>
                 <div className="p-4 border-t bg-white flex justify-end gap-3 sticky bottom-0 dark:bg-slate-800">

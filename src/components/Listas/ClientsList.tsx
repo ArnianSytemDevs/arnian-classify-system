@@ -44,11 +44,17 @@ export default function ClientsList({status}:ClientListProops) {
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
   };
 
-  /* 🔹 Cargar clientes en tiempo real */
   useEffect(() => {
-    ClientsController.getClients(setClients, filters);
-    return () => ClientsController.unsubscribe();
+    const delayDebounce = setTimeout(() => {
+      ClientsController.getClients(setClients, filters);
+    }, 800); // ⏱️ Espera 800 ms después del último cambio
+
+    return () => {
+      clearTimeout(delayDebounce); // 🔄 Reinicia el temporizador si el usuario sigue escribiendo
+      ClientsController.unsubscribe(); // 🚫 Cancela la suscripción anterior
+    };
   }, [filters]);
+
 
   /* 🔹 Switch handler */
   const handleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {

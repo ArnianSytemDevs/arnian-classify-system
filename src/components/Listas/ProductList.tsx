@@ -71,11 +71,16 @@ export default function ProductList({ status }: ProductListProops) {
     }
 
     useEffect(() => {
+    const delayDebounce = setTimeout(() => {
         ProductListController.getProdList(setProducts, filters);
-        return () => {
-            ProductListController.unsubscribe();
-        };
+    }, 800); // ⏱️ Espera 800 ms después del último cambio
+
+    return () => {
+        clearTimeout(delayDebounce); // 🔄 Reinicia el temporizador si el usuario sigue escribiendo
+        ProductListController.unsubscribe(); // 🚫 Cancela la suscripción anterior
+    };
     }, [filters]);
+
 
     useEffect(() => {
         if (openMod) {
@@ -129,40 +134,50 @@ export default function ProductList({ status }: ProductListProops) {
     };
 
     const renderImage = (file:string,record:Product) => {
-        const lower = file[0].toLowerCase();
-        const url = pb.files.getURL(record, file);
+        if(record.files?.length != 0){
+            const lower = file[0].toLowerCase();
+            const url = pb.files.getURL(record, file[0]);
 
-        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
-        return (
-            <img
-            src={url || NoPhoto}
-            alt={file}
-            className="w-20 h-20 object-cover rounded border"
-            />
-        );
-        }
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+                <img
+                src={url || NoPhoto}
+                alt={file}
+                className="w-20 h-20 object-cover rounded border"
+                />
+            );
+            }
 
-        if (lower.endsWith(".pdf")) {
-        return (
-            <div className="flex flex-col items-center text-red-500">
-            📄 <span className="text-xs truncate w-20">{file}</span>
+            if (lower.endsWith(".pdf")) {
+            return (
+                <div className="flex flex-col items-center text-red-500">
+                📄 <span className="text-xs truncate w-20">{file}</span>
+                </div>
+            );
+            }
+
+            if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+                <div className="flex flex-col items-center text-blue-500">
+                📝 <span className="text-xs truncate w-20">{file}</span>
+                </div>
+            );
+            }
+
+            return (
+            <div className="flex flex-col items-center text-gray-500">
+                📦 <span className="text-xs truncate w-20">{file}</span>
             </div>
-        );
+            );
+        }else{
+            return(
+                <img
+                    src={NoPhoto}
+                    alt={file}
+                    className="w-20 h-20 object-cover rounded border"
+                />
+            )
         }
-
-        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
-        return (
-            <div className="flex flex-col items-center text-blue-500">
-            📝 <span className="text-xs truncate w-20">{file}</span>
-            </div>
-        );
-        }
-
-        return (
-        <div className="flex flex-col items-center text-gray-500">
-            📦 <span className="text-xs truncate w-20">{file}</span>
-        </div>
-        );
     }
 
     return (

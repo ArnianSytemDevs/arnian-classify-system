@@ -22,22 +22,25 @@
         🎨 Estilos MUI
     ============================================================ */
     const inputText = {
-        "& .MuiInputBase-root": {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
+    "& .MuiInputBase-root": {
         color: "text.primary",
-        backgroundColor: "background.paper",
-        },
-        "& .MuiInputLabel-root": {
-        color: "text.secondary",
-        },
-        "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: "divider",
-        },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#06b6d4",
-        },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#0891b2",
-        },
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
     };
 
     /* ============================================================
@@ -122,6 +125,7 @@
             <div className="overflow-auto p-5">
             <form className="grid grid-cols-2 gap-5" onSubmit={handleSubmit}>
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="name"
@@ -135,6 +139,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="alias"
@@ -147,6 +152,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="rfc"
@@ -160,6 +166,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="vin"
@@ -172,6 +179,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="address"
@@ -185,6 +193,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="postal_code"
@@ -198,6 +207,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="email"
                 id="email"
@@ -211,6 +221,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="tel"
                 id="phone_number"

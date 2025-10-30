@@ -1,3 +1,4 @@
+import type { ListResult } from "pocketbase";
 import { pb, type FilterOptions } from "./pocketbase";
 import buildFilter from "./pocketbase";
 
@@ -31,16 +32,22 @@ export const buildClientFilters = (filters?: any): string => {
 ======================================================= */
 export const getRealtimeClients = async (
   setClients: React.Dispatch<React.SetStateAction<any[]>>,
-  filters?: any
+  filters?: any,
+  page: number = 1,
+  perPage: number = 25
 ) => {
   try {
     pb.autoCancellation(false);
 
     const filterStr = buildClientFilters(filters);
 
-    // 🔹 Carga inicial
-    const list = await pb.collection("Clients").getFullList({ filter: filterStr });
-    setClients(list);
+    // 🔹 Carga inicial paginada (máx. 25 registros)
+    const list = await pb.collection("Clients").getList(page, perPage, {
+      filter: filterStr,
+      sort: "-created" // opcional: ordena por los más recientes
+    });
+
+    setClients(list.items);
 
     // 🔹 Suscripción en tiempo real
     pb.collection("Clients").subscribe(
@@ -49,7 +56,7 @@ export const getRealtimeClients = async (
         setClients((prev) => {
           switch (e.action) {
             case "create":
-              return [...prev, e.record];
+              return [e.record, ...prev].slice(0, perPage); // ✅ agrega al inicio y mantiene límite
             case "update":
               return prev.map((c) => (c.id === e.record.id ? e.record : c));
             case "delete":
@@ -65,6 +72,7 @@ export const getRealtimeClients = async (
     console.error("❌ Error en getRealtimeClients:", error);
   }
 };
+
 
 /* =======================================================
     📴 UNSUBSCRIBE
@@ -94,15 +102,28 @@ export async function createClientRecord(formData: FormData) {
 export const getClientsList = async (
   page = 1,
   perPage = 50,
-  filters?: FilterOptions
-) => {
+  filters?: FilterOptions,
+  latest = false
+): Promise<ListResult<any>> => {
   try {
     const filterStr = buildFilter(filters);
-    return await pb.collection('Clients').getList(page, perPage, {
-      filter: filterStr,
-    });
+    const options: Record<string, any> = {};
+
+    // Solo agrega el filtro si existe contenido
+    if (filterStr && filterStr.trim() !== "") {
+      options.filter = filterStr;
+    }
+
+    // Orden descendente por fecha de creación si se solicita
+    if (latest) {
+      options.sort = "-created";
+    }
+
+    // Petición a PocketBase
+    const list = await pb.collection("Clients").getList<any>(page, perPage, options);
+    return list;
   } catch (error) {
-    console.error(`Error en getCollectionList(${'Measurements'}):`, error);
+    console.error("❌ Error en getClientsList:", error);
     throw error;
   }
 };

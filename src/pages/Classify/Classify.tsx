@@ -21,13 +21,15 @@ import { FaPlusSquare } from "react-icons/fa";
 import ProductForm from "../../components/Formularios/ProductForm";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import NoPhoto from '../../assets/NotPhoto.png'
+import { checkRole } from "../../hooks/usePremission.controller";
+import UserPermissions from "../../hooks/usePremission";
 
 export default function Classify() {
 
     usePreventNavigation()
 
     const { t } = useTranslation();
-    const { classifyState, classifyDispatch, entryDispatch } = useClassifyContext();
+    const { classifyState, classifyDispatch, entryDispatch,setRole,role } = useClassifyContext();
     const [inputProduct, setInputProduct] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
     const [inputUnit] = useState("");
@@ -71,6 +73,15 @@ export default function Classify() {
             setCountries(resp)
         })
     },[])
+
+    useEffect(() => {
+        const getRole = async () => {
+            const userRole = await checkRole();
+            setRole(userRole);
+        };
+        getRole();
+    }, []);
+    
 
     useEffect(() => {
         const subtotal = classifyState.products.reduce(
@@ -184,7 +195,7 @@ export default function Classify() {
             ClassifyController.getProducts(inputProduct)
             .then((resp: any) => setProducts(resp))
             .catch((err) => console.error("❌ Error al buscar productos:", err));
-        }, 2000);
+        }, 800);
 
         // 🧹 Limpiamos el timeout si el usuario sigue escribiendo
         return () => clearTimeout(delayDebounce);
@@ -242,7 +253,7 @@ export default function Classify() {
             "lote",
             "batch",
             "quantity",
-            "origin_country",
+            // "origin_country",
             "seller_country",
             "weight",
             "net_weight",
@@ -251,7 +262,7 @@ export default function Classify() {
             "tariff_fraction",
             "parts_number",
             "item",
-            "limps",
+            "limps"
         ];
 
         // 🔍 Validar campos vacíos
@@ -442,8 +453,9 @@ export default function Classify() {
     }
 
     const renderImage = (file:any,record:Product) => {
+        if(file.length !=0){
             const lower = file[0].toLowerCase();
-            const url = pb.files.getURL(record, file);
+            const url = pb.files.getURL(record, file[0]);
     
             if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
             return (
@@ -476,27 +488,96 @@ export default function Classify() {
                 📦 <span className="text-xs truncate w-20">{file}</span>
             </div>
             );
+        }else{
+            return(
+                <img
+                    src={NoPhoto}
+                    alt={file}
+                    className="w-20 h-20 object-cover rounded border"
+                />
+            )
         }
+    }
+
+    const renderPreview = (file: File | string) => {
+        // 📌 Caso 1: cuando es File del navegador
+        if (file instanceof File) {
+        const fileType = file.type;
+    
+        if (fileType.startsWith("image/")) {
+            return (
+            <img
+                src={URL.createObjectURL(file)}
+                alt={file.name}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+    
+        if (fileType === "application/pdf") {
+            return <span className="text-red-500 text-2xl">📄</span>;
+        }
+    
+        if (
+            fileType.includes("word") ||
+            fileType.includes("officedocument") ||
+            fileType.includes("msword")
+        ) {
+            return <span className="text-blue-500 text-2xl">📝</span>;
+        }
+    
+        return <span className="text-gray-500 text-2xl">📦</span>;
+        }
+    
+        // 📌 Caso 2: cuando es string desde PocketBase
+        if (typeof file === "string") {
+        const lower = file.toLowerCase();
+    
+        // ⚠️ Aquí necesitas el record completo, no solo el id
+        const record = classifyState.entrySelected; // o el producto actual
+        const url = pb.files.getURL(record, file);
+    
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+            <img
+                src={url}
+                alt={file}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+    
+        if (lower.endsWith(".pdf")) {
+            return (
+            <div className="flex flex-col items-center text-red-500">
+                📄 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+    
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+            <div className="flex flex-col items-center text-blue-500">
+                📝 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+    
+        return (
+            <div className="flex flex-col items-center text-gray-500">
+            📦 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+        );
+        }
+    
+    
+        return null;
+    };
 
     return (
         <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
             <MenuComponent />
             <div className="text-center bg-cyan-50/50 dark:bg-slate-800 p-5 min-h-screen overflow-x-auto">
-                <div className="mt-6 flex gap-5">
-                    <button
-                        onClick={()=>handleSaveAll()}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
-                    >
-                        Guardar Clasificación
-                    </button>
-                    <button
-                        onClick={()=>{ handleReturn() }}
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
-                    >
-                        Salir
-                    </button>
-                    
-                </div>
                 <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 mb-8">
                 {/* 🖼️ Logo */}
                 <div className="flex justify-center mb-6">
@@ -558,6 +639,25 @@ export default function Classify() {
                     fullWidth
                     />
                 </div>
+                {classifyState.entrySelected.file.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                        {classifyState.entrySelected.file.map((file: File) => (
+                        <div
+                            key={file.name || file.toString()  }
+                            className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
+                        >
+
+                            <div
+                            className="w-[100%] h-[100%] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-3"
+                            onClick={() => window.open( pb.files.getURL(classifyState.entrySelected, file.toString()))}
+                            >
+                            {renderPreview(file)}
+                            <span className="mt-2 text-xs truncate w-24">{ file.toString() }</span>
+                            </div>
+                        </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* 💰 Totales financieros */}
                 <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
@@ -669,7 +769,40 @@ export default function Classify() {
                     > <FaPlusSquare /> </button>
 
                 </div>
-
+                <div className="mt-6 flex gap-5">
+                    <UserPermissions permission="saveClassify" role={role}>
+                        <button
+                            onClick={()=>handleSaveAll()}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                        >
+                            Guardar Clasificación
+                        </button>
+                    </UserPermissions>
+                    <UserPermissions permission="saveReview" role={role} >
+                        <button
+                            onClick={()=>handleSaveAll()}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                        >
+                            Guardar Revision
+                        </button>
+                    </UserPermissions>
+                    <UserPermissions permission="cancelProcess" role={role} >
+                        <button
+                            onClick={()=>{ handleReturn() }}
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                        >
+                            Salir
+                        </button>
+                    </UserPermissions>
+                    <UserPermissions permission="closeClassify" role={role} >
+                        <button
+                            onClick={()=>{ handleReturn() }}
+                            className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                        >
+                            Finalizar entrada
+                        </button>
+                    </UserPermissions>
+                </div>
                 {/* 🧾 TABLA DE PRODUCTOS */}
                 <div className="bg-white dark:bg-slate-900 rounded-md p-4 shadow-md overflow-x-auto min-h-110">
                     <table className="w-full border-collapse min-w-[1000px]">
@@ -786,7 +919,6 @@ export default function Classify() {
                             
                             <td className={thBody}>${Number(p.unit_price || 0).toFixed(2)}</td>
                             <td className={thBody}>${Number(p.unit_price * p.quantity || 0).toFixed(2)}</td>
-
                             <td className={thBody}>{p.supplier?.name || p.id_supplier || "-"}</td>
 
                             {/* 🌎 País de origen */}

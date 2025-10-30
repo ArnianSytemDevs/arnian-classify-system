@@ -24,23 +24,26 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
     🎨 Estilos MUI
   ============================================================ */
   const inputText = {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
     "& .MuiInputBase-root": {
-      color: "text.primary",
-      backgroundColor: "background.paper",
+        color: "text.primary",
     },
-    "& .MuiInputLabel-root": {
-      color: "text.secondary",
-    },
-    "& .MuiOutlinedInput-notchedOutline": {
-      borderColor: "divider",
-    },
-    "&:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#06b6d4",
-    },
-    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#0891b2",
-    },
-  };
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
 
   /* ============================================================
      📸 Manejo de archivos (imágenes)
@@ -160,7 +163,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
   };
 
   /* ============================================================
-     🧱 Render principal
+      🧱 Render principal
   ============================================================ */
   return (
     <Modal open={openModal} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -195,6 +198,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
         <div className="overflow-auto p-5">
           <form className="grid grid-cols-2 gap-5">
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="name"
@@ -206,6 +210,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="alias"
@@ -217,6 +222,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="field"
@@ -228,6 +234,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="rfc"
@@ -239,6 +246,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="address"
@@ -250,6 +258,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="number"
               id="postal_code"
@@ -261,6 +270,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="email"
               id="email"

@@ -110,21 +110,27 @@ export const getSuppliersList = async (
   }
 };
 
-export const getSupplierList = async (
-  page = 1,
-  perPage = 50,
-  filters?: FilterOptions
-) => {
+export const getSupplierList = async ( page = 1, perPage = 50, filters?: FilterOptions, latest = false) => {
   try {
     const filterStr = buildFilter(filters);
-    return await pb.collection('Suppliers').getList(page, perPage, {
+
+    const options: any = {
       filter: filterStr,
-    });
+    };
+
+    // 🔹 Si latest es true → ordenar por "created" descendente
+    if (latest) {
+      options.sort = "-created"; // el guión indica orden descendente en PocketBase
+    }
+
+    // ⚙️ Ejecutar petición
+    return await pb.collection("Suppliers").getList(page, perPage, options);
   } catch (error) {
-    console.error(`Error en getCollectionList(${'Suppliers'}):`, error);
+    console.error(`❌ Error en getCollectionList('Suppliers'):`, error);
     throw error;
   }
 };
+
 
 export const getSupplierData = async(id:any) =>{
   try{

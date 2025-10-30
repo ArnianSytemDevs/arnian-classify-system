@@ -10,6 +10,7 @@ export type ProductForm = {
     serial_number:string | any;
     id_measurement:any | any;
     color:string | any;
+    traduction:string | any;
     weight:number | any;
     id_supplier:any | any;
     unit_price:any;

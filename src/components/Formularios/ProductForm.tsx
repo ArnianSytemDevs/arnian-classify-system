@@ -47,35 +47,48 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
     "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
     };
-  
+
   useEffect(() => {
-    if(openModal){
-      if (inputValue.trim() !== "") {
-        ProductFormController.getSuppliers(inputValue,mode).then((resp: any) => {
+    if (!openModal) return;
+
+    const delay = setTimeout(() => {
+      const trimmed = inputValue.trim();
+
+      ProductFormController.getSuppliers(trimmed !== "" ? trimmed : undefined, mode)
+        .then((resp: any) => {
           setSuppliers(resp);
-        });
-      } else {
-        setSuppliers([]);
+        })
+        .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+    }, 800); // Espera de 800ms para evitar spam al escribir
+
+    return () => clearTimeout(delay);
+  }, [inputValue, openModal, mode]);
+
+  useEffect(() => {
+    if (!openModal) return;
+
+    (async () => {
+      try {
+        const [measures, statuses]:any = await Promise.all([
+          ProductFormController.getMeasurement(),
+          ProductFormController.getStatus(),
+        ]);
+
+        setMeasurement(measures);
+        setStatus(statuses);
+
+        if (mode === "edit" && productState.productList[0]?.id_supplier) {
+          const supplierList:any = await ProductFormController.getSuppliers(
+            productState.productList[0].id_supplier,
+            mode
+          );
+          setSuppliers(supplierList);
+        }
+      } catch (err) {
+        console.error("❌ Error al cargar datos iniciales:", err);
       }
-    }
-  }, [inputValue]);
-  
-  useEffect(()=>{
-    if(openModal){
-      ProductFormController.getMeasurement().then((resp:any)=>{
-        setMeasurement(resp)
-      })
-      ProductFormController.getStatus().then((resp:any)=>{
-        setStatus(resp)
-      })
-      if (mode == 'edit') {
-        ProductFormController.getSuppliers(productState.productList[0].id_supplier, mode)
-          .then((resp: any) => {
-            setSuppliers(resp);
-          });
-      }
-    }
-  },[openModal])
+    })();
+  }, [openModal, mode, productState.productList]);
 
   useEffect(()=>{
     if(openModal == true && mode == 'edit' && measurement.length != 0 && status.length != 0 && suppliers.length != 0){
@@ -244,7 +257,7 @@ const renderPreview = (file: File | string) => {
             <TextField sx={inputText} variant="filled" type="text" label="model" id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="brand" id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="serial_number" id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="number" label="unit_price MXN" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" label="unit_price USD" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <div>
               <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label="weight" fullWidth required />
               <Select
@@ -311,6 +324,7 @@ const renderPreview = (file: File | string) => {
 
             {/* Archivos con preview */}
             <TextField sx={inputText} variant="filled" type="text" label="description" id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
+            <TextField sx={inputText} variant="filled" type="text" label="traduccion" id="traduction" value={productState.productForm.traduction} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
                 Archivos

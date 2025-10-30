@@ -48,7 +48,7 @@
     useEffect(() => {
     const delayDebounce = setTimeout(() => {
         SuppliersController.getSuppliers(setSuppliers, filters);
-    }, 3000); // ⏱️ Espera 3 segundos después del último cambio
+    }, 800); // ⏱️ Espera 3 segundos después del último cambio
 
     return () => {
         clearTimeout(delayDebounce); // 🔄 Reinicia el temporizador si el usuario sigue escribiendo

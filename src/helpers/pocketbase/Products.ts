@@ -25,6 +25,42 @@ export type productsFilters ={
     seller_country?: string;
 }
 
+export default function buildProductFilter(filters?: any): string {
+  if (!filters) return "";
+
+  const parts: string[] = [];
+
+  if (filters.id) parts.push(`id = "${filters.id}"`);
+  if (filters.public_key) parts.push(`public_key ~ "${filters.public_key}"`);
+  if (filters.name) parts.push(`name ~ "${filters.name}"`);
+  if (filters.alias) parts.push(`alias ~ "${filters.alias}"`);
+  if (filters.code) parts.push(`code ~ "${filters.code}"`);
+  if (filters.part_number) parts.push(`part_number ~ "${filters.part_number}"`);
+  if (filters.description) parts.push(`description ~ "${filters.description}"`);
+  if (filters.model) parts.push(`model ~ "${filters.model}"`);
+  if (filters.brand) parts.push(`brand ~ "${filters.brand}"`);
+  if (filters.serial_number) parts.push(`serial_number ~ "${filters.serial_number}"`);
+  if (filters.id_measurement) parts.push(`id_measurement = "${filters.id_measurement}"`);
+  if (filters.weight) parts.push(`weight = ${filters.weight}`);
+  if (filters.id_status) parts.push(`id_status = "${filters.id_status}"`);
+  if (filters.id_supplier) parts.push(`id_supplier = "${filters.id_supplier}"`);
+  if (filters.traduction) parts.push(`traduction ~ "${filters.traduction}"`);
+  if (filters.unit_price) parts.push(`unit_price = ${filters.unit_price}`);
+  
+  // ✅ Booleanos (sin comillas)
+  if (filters.deprecated !== undefined)
+    parts.push(`deprected = ${filters.deprecated}`);
+  if (filters.is_deleted !== undefined)
+    parts.push(`is_deleted = ${filters.is_deleted}`);
+
+  // ✅ Fechas (ISO formato PocketBase)
+  if (filters.created) parts.push(`created >= "${new Date(filters.created).toISOString()}"`);
+  if (filters.updated) parts.push(`updated >= "${new Date(filters.updated).toISOString()}"`);
+
+  return parts.join(" && ");
+}
+
+
 export const buildFilters = (filters?: FilterOptions): string => {
   if (!filters) return "";
 
@@ -90,42 +126,55 @@ export const getProduct = async(id: string) => {
 };
 
 // Suscripción en tiempo real a Products
-type SetProducts = React.Dispatch<React.SetStateAction<any[]>>;
+// type SetProducts = React.Dispatch<React.SetStateAction<any[]>>;
 
 export const getRealtimeProducts = async (
-  setProducts: SetProducts,
-  filters?: any
+  setProducts: React.Dispatch<React.SetStateAction<any[]>>,
+  filters?: any,
+  page: number = 1,
+  perPage: number = 25
 ) => {
   try {
     pb.autoCancellation(false);
 
     const filterStr = buildFilters(filters);
 
-    // Primera carga
-    const list = await pb.collection("Products").getFullList({ filter: filterStr });
-    setProducts(list);
+    // 🔹 Carga inicial paginada (máx. 25 registros)
+    const list = await pb.collection("Products").getList(page, perPage, {
+      filter: filterStr,
+      sort: "-created", // 🔄 Ordena por los más recientes
+    });
 
-    // Subscripción en tiempo real
+    console.log("🚀 ~ getRealtimeProducts ~ list.items:", list.items)
+    setProducts(list.items);
+
+    // 🔹 Suscripción en tiempo real
     pb.collection("Products").subscribe(
       "*",
-      function (e) {
+      (e) => {
         setProducts((prev) => {
-          if (e.action === "create") {
-            return [...prev, e.record];
+          switch (e.action) {
+            case "create":
+              // ✅ Inserta nuevo registro al inicio y mantiene el límite
+              return [e.record, ...prev].slice(0, perPage);
+
+            case "update":
+              return prev.map((p) =>
+                p.id === e.record.id ? e.record : p
+              );
+
+            case "delete":
+              return prev.filter((p) => p.id !== e.record.id);
+
+            default:
+              return prev;
           }
-          if (e.action === "update") {
-            return prev.map((p) => (p.id === e.record.id ? e.record : p));
-          }
-          if (e.action === "delete") {
-            return prev.filter((p) => p.id !== e.record.id);
-          }
-          return prev;
         });
       },
       { filter: filterStr }
     );
   } catch (error) {
-    console.error("Error en getRealtimeProducts:", error);
+    console.error("❌ Error en getRealtimeProducts:", error);
   }
 };
 
@@ -191,16 +240,22 @@ export const updateProductDeprecated = async (id: string, deprecated: boolean) =
 
 export const getProductsList = async (
   page = 1,
-  perPage = 50,
-  filters?: productsFilters
+  perPage = 10,
+  filters?: any,
+  latest = false
 ) => {
   try {
-    const filterStr = buildFilter(filters);
-    return await pb.collection('Products').getList(page, perPage, {
-      filter: filterStr,
-    });
+    const filterStr = buildProductFilter(filters);
+
+    const options: any = { filter: filterStr };
+
+    if (latest) {
+      options.sort = "-created"; // 🔄 Orden descendente (más recientes primero)
+    }
+
+    return await pb.collection("Products").getList(page, perPage, options);
   } catch (error) {
-    console.error(`Error en getCollectionList(${'Products'}):`, error);
+    console.error(`Error en getProductsList:`, error);
     throw error;
   }
 };

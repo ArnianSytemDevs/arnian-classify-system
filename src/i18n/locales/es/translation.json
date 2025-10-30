@@ -67,7 +67,8 @@
             "lblItem":"Item",
             "lblLumps":"Bultos",
             "lblTotalValue":"Valor total",
-            "lblDamage":"Dañado?"
+            "lblDamage":"Dañado?",
+            "public_key":"Numero de carga"
         }
     },
     "Users":{

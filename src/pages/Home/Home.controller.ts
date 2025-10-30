@@ -15,6 +15,7 @@ class HomeController {
             Cookies.set("id", resp.record.id);
             Cookies.set("name", resp.record.name);
             Cookies.set("token", resp.token);
+            Cookies.set("categoryUser",resp.record.id_category_user)
             return true;
         } catch (err) {
             console.error("Login error:", err);
