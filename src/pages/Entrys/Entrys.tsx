@@ -78,7 +78,7 @@ export default function Products() {
                 </button>
 
                 <br />
-                <UserPermissions permission='create' role={role} >
+                <UserPermissions permission='createEntry' role={role} >
                     <button
                         onClick={() => {
                             setOpen(true);
@@ -91,40 +91,42 @@ export default function Products() {
                 </UserPermissions>
 
                 <br />
-                <button
-                    disabled={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
-                    }
-                    onClick={() => {
-                        setOpen(true);
-                        setMode("edit");
-                    }}
-                    className={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
-                            ? btnDisabled
-                            : option === 3
-                            ? btnSelected
-                            : btnUnselected
-                    }
-                >
-                    <MdEditSquare className="text-md" /> {t("Entrys.btnUpdate")}
-                </button>
-
+                <UserPermissions permission='esitEntry' role={role} >
+                    <button
+                        disabled={
+                            entryState.entryList.length > 1 ||
+                            entryState.entryList.length === 0
+                        }
+                        onClick={() => {
+                            setOpen(true);
+                            setMode("edit");
+                        }}
+                        className={
+                            entryState.entryList.length > 1 ||
+                            entryState.entryList.length === 0
+                                ? btnDisabled
+                                : option === 3
+                                ? btnSelected
+                                : btnUnselected
+                        }
+                    >
+                        <MdEditSquare className="text-md" /> {t("Entrys.btnUpdate")}
+                    </button>
+                </UserPermissions>
                 <br />
-                <button
-                    disabled={entryState.entryList.length <= 0}
-                    onClick={handleDeleteEntry} // ✅ Ejecuta la función correctamente
-                    className={
-                        entryState.entryList.length === 0
-                            ? btnDisabled
-                            : btnUnselected
-                    }
-                >
-                    <FaTrashAlt className="text-md" /> {t("Entrys.btnDelete")}
-                </button>
-
+                <UserPermissions permission='deleteEntry' role={role} >
+                    <button
+                        disabled={entryState.entryList.length <= 0}
+                        onClick={handleDeleteEntry} // ✅ Ejecuta la función correctamente
+                        className={
+                            entryState.entryList.length === 0
+                                ? btnDisabled
+                                : btnUnselected
+                        }
+                    >
+                        <FaTrashAlt className="text-md" /> {t("Entrys.btnDelete")}
+                    </button>
+                </UserPermissions>
                 <br />
                 <button
                     disabled={
@@ -147,7 +149,7 @@ export default function Products() {
                             : btnUnselected
                     }
                 >
-                    <FaSearchDollar className="text-md" /> {t("Classify.btnStart")}
+                    <FaSearchDollar className="text-md" /> { role == "Reviewer"? t("Classify.btnReview") : t("Classify.btnStart")  }
                 </button>
             </div>
 

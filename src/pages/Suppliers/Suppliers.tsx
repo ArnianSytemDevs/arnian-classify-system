@@ -102,7 +102,7 @@ export default function Suppliers() {
         </button>
 
         <br />
-        <UserPermissions permission='create' role={role} >
+        <UserPermissions permission='createSuppliers' role={role} >
           <button
             onClick={() => {
               setOpen(true);
@@ -115,7 +115,7 @@ export default function Suppliers() {
         </UserPermissions>
 
         <br />
-        <UserPermissions permission='edit' role={role} >
+        <UserPermissions permission='editSuppliers' role={role} >
           <button
             disabled={
               suppliersState.supplierList.length > 1 ||
@@ -140,7 +140,7 @@ export default function Suppliers() {
         </UserPermissions>
 
         <br />
-        <UserPermissions permission='delete' role={role} >
+        <UserPermissions permission='deleteSuppliers' role={role} >
           <button
             disabled={suppliersState.supplierList.length <= 0}
             onClick={handleDeleteSupplier}

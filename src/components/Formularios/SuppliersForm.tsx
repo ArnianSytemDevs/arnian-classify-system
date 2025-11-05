@@ -6,6 +6,7 @@
     import { SuppliersFormController } from "./SuppliersForm.controller";
     import { useClassifyContext } from "../../hooks/useClassifyContext";
     import type { Status } from "../../types/collections";
+import UserPermissions from "../../hooks/usePremission";
 
     type SuppliersFormProps = {
     openModal: boolean;
@@ -15,7 +16,7 @@
     };
 
     export default function SuppliersForm({ openModal, setOpenModal, mode }: SuppliersFormProps) {
-    const { suppliersState, suppliersDispatch } = useClassifyContext();
+    const { suppliersState, suppliersDispatch, role } = useClassifyContext();
     const { t } = useTranslation();
 
     /* ============================================================
@@ -248,20 +249,22 @@
                 Cancelar
             </button>
 
-            <button
-                disabled={!isValid()}
-                type="submit"
-                onClick={handleSubmit}
-                className={
-                isValid()
-                    ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
-                    : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
-                }
-            >
-                {mode === "edit"
-                ? t("actions.save", { defaultValue: "Guardar" })
-                : t("actions.create", { defaultValue: "Crear" })}
-            </button>
+            <UserPermissions permission="save" role={role}> 
+                <button
+                    disabled={!isValid()}
+                    type="submit"
+                    onClick={handleSubmit}
+                    className={
+                    isValid()
+                        ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                        : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
+                    }
+                >
+                    {mode === "edit"
+                    ? t("actions.save", { defaultValue: "Guardar" })
+                    : t("actions.create", { defaultValue: "Crear" })}
+                </button>
+            </UserPermissions>
             </div>
         </div>
         </Modal>

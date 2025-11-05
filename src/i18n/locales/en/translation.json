@@ -44,6 +44,7 @@
         "btnDelete":"Delete classify",
         "btnGet":"Classifty list",
         "btnStart":"Start classifying",
+        "btnReview":"Start review",
         "lblProd":"Search and add product",
         "list":{
             "lblOptions":"Options",

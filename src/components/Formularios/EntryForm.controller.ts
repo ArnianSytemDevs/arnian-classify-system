@@ -110,7 +110,7 @@ export class entryFormController {
         formData.append("is_disabled", "false");
         formData.append(
             "id_status",
-            status.find((st) => st.name === "Active")?.id || ""
+            status.find((st) => st.name === "In_review")?.id || ""
         );
 
         // ✅ Adjuntar archivos

@@ -53,6 +53,12 @@ export default function buildProductFilter(filters?: any): string {
   if (filters.is_deleted !== undefined)
     parts.push(`is_deleted = ${filters.is_deleted}`);
 
+    if (filters.is_classify !== undefined)
+    parts.push(`is_classify = ${filters.is_classify}`);
+
+    if (filters.is_reviwed !== undefined)
+    parts.push(`is_reviwed = ${filters.is_reviwed}`);
+
   // ✅ Fechas (ISO formato PocketBase)
   if (filters.created) parts.push(`created >= "${new Date(filters.created).toISOString()}"`);
   if (filters.updated) parts.push(`updated >= "${new Date(filters.updated).toISOString()}"`);
@@ -145,7 +151,6 @@ export const getRealtimeProducts = async (
       sort: "-created", // 🔄 Ordena por los más recientes
     });
 
-    console.log("🚀 ~ getRealtimeProducts ~ list.items:", list.items)
     setProducts(list.items);
 
     // 🔹 Suscripción en tiempo real

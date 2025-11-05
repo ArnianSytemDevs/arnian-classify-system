@@ -35,6 +35,8 @@ export type Entry = {
     subtotal: number;
     packing_price: number;
     other_price: number;
+    is_reviewed:boolean;
+    is_classify:boolean;
     total: number;
     total_limbs: number;
     net_weight_total: number;

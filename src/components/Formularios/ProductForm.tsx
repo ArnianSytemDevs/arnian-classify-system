@@ -11,6 +11,7 @@ import { type Status, type Measurement, type Supplier } from "../../types/collec
 import type { ChangeEvent } from "react";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { FaRegWindowClose } from "react-icons/fa";
+import UserPermissions from "../../hooks/usePremission";
 
 type ProductFormProps = {
   openModal: boolean;
@@ -20,7 +21,7 @@ type ProductFormProps = {
 
 export default function ProductForm({ openModal, setOpenModal,mode }: ProductFormProps) {
 
-  const { productState,productDispatch,classifyDispatch } = useClassifyContext()
+  const { productState,productDispatch,classifyDispatch, role } = useClassifyContext()
   const [inputValue, setInputValue] = useState(""); // solo para búsqueda dinámica
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [measurement,setMeasurement] = useState<Measurement[]>([])
@@ -380,9 +381,11 @@ const renderPreview = (file: File | string) => {
           >
             Cancelar
           </button>
-          <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
-            { mode !== "classify"? t("actions.create") :t("products.btnCreateAdd")}
-          </button>
+          <UserPermissions permission="save" role={role}> 
+            <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
+              { mode !== "classify"? t("actions.create") :t("products.btnCreateAdd")}
+            </button>
+          </UserPermissions>
         </div>
       </div>
     </Modal>

@@ -9,6 +9,7 @@ import type { Clients, Status, Supplier } from '../../types/collections';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
 import { pb } from '../../helpers/pocketbase/pocketbase';
 import { FaRegWindowClose } from "react-icons/fa";
+import UserPermissions from '../../hooks/usePremission';
 
 type EntryFormProops = {
     openModal:boolean;
@@ -19,7 +20,7 @@ type EntryFormProops = {
 
 export default function EntryForm({openModal,setOpenModal,mode,status}:EntryFormProops) {
 
-    const { entryState,entryDispatch } = useClassifyContext()
+    const { entryState,entryDispatch, role } = useClassifyContext()
     const { t } = useTranslation();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [clients,setClients] = useState<Clients[]>([])
@@ -126,7 +127,8 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
             rate.invoice_number != "" &&
             rate.tax_id != "" &&
             rate.id_client != null &&
-            rate.id_supplier != null
+            rate.id_supplier != null &&
+            rate.files.length != 0
     }
 
     const handleSubmit = (e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -306,6 +308,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                             </label>
                             <input
                             type="file"
+                            accept="application/pdf,image/*"
                             multiple
                             onChange={handleFileChange}
                             className="mb-4"
@@ -353,9 +356,11 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                     >
                         Cancelar
                     </button>
-                    <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
-                        {mode == "create"? t("Entrys.form.btnCreate"):t("Entrys.form.btnUpdate")}
-                    </button>
+                    <UserPermissions permission="save" role={role} >
+                        <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
+                            {mode == "create"? t("Entrys.form.btnCreate"):t("Entrys.form.btnUpdate")}
+                        </button>
+                    </UserPermissions>
                 </div>
             </div>
         </Modal>

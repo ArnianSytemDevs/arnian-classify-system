@@ -62,15 +62,15 @@ return (
                 <br></br>
                 <button onClick={()=>{ setOption(1) }} className={ option == 1? btnSelected:btnUnselected } > < FaListAlt className=' text-md ' /> {t("products.btnGet")}</button>
                 <br></br>
-                <UserPermissions permission='create' role={role} >
+                <UserPermissions permission='createProducts' role={role} >
                     <button onClick={()=>{ setOpen(!open); setMode('çreate') }} className={ option == 2? btnSelected:btnUnselected } > < MdCreateNewFolder className=' text-md ' /> {t("products.btnCreate")}</button>
                 </UserPermissions>
                 <br></br>
-                <UserPermissions permission='edit' role={role} >
+                <UserPermissions permission='editProducts' role={role} >
                     <button  disabled={productState.productList.length > 1 || productState.productList.length == 0 } onClick={()=>{ setOpen(!open); setMode("edit");}} className={ productState.productList.length >> 1 || productState.productList.length == 0 ? btnDisabled : option == 3? btnSelected:btnUnselected } > < MdEditSquare className=' text-md ' /> {t("products.btnUpdate")}</button>
                 </UserPermissions>
                 <br></br>
-                <UserPermissions permission='delete' role={role} >
+                <UserPermissions permission='deleteProducts' role={role} >
                     <button  disabled={productState.productList.length <= 0 } onClick={()=>{ handleDeleteProduct() }} className={ productState.productList.length == 0 ? btnDisabled : option == 4? btnSelected:btnUnselected } > < FaTrashAlt className=' text-md ' /> {t("products.btnDelete")}</button>
                 </UserPermissions>
             </div>
