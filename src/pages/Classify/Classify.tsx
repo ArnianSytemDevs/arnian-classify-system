@@ -91,7 +91,6 @@ export default function Classify() {
     /* 🟣 2️⃣ Cargar datos según entrada seleccionada */
     useEffect(() => {
     const entry = classifyState.entrySelected;
-    console.log("🚀 ~ Classify ~ entry:", entry)
     if (!entry?.id) {
         classifyDispatch({ type: "clear-all" })
         entryDispatch({ type: 'clear-state' })
@@ -212,7 +211,7 @@ export default function Classify() {
 
     // 🧠 Si no está en modo edición, pero el clasificador está continuando la revisión, permitir continuar
     const canSaveWithoutEdit =
-        isClassifier &&
+        isClassifier || role === "Developer"&&
         (product.quantity ||
             product.net_weight ||
             product.unit_weight ||

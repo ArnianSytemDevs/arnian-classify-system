@@ -109,7 +109,7 @@ export class ProductFormController {
         // 🔁 Si era edición, marcar el producto anterior como deprecado
         if (mode === "edit" && productSel?.id) {
         await updateProductDeprecated(productSel.id, true);
-        console.log(`⚠️ Producto ${productSel.id} marcado como deprecado`);
+        // console.log(`⚠️ Producto ${productSel.id} marcado como deprecado`);
         }
 
         // ✅ Si estamos en modo classify, agregar al reducer

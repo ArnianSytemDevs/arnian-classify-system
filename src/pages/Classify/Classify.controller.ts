@@ -239,7 +239,7 @@ export class ClassifyController {
                 }),
             });
             entryProduct = newEntryProduct;
-            } else if (role === "Classifier") {
+            } else if (role === "Classifier" || role === "Developer") {
             await pb.collection("Entry_products").update(entryProduct.id, {
                 is_damage: Boolean(product.damage),
                 lote: product.lote || "",
