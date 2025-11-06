@@ -1,7 +1,6 @@
 import React, { type ChangeEvent } from "react";
 import { Modal, TextField } from "@mui/material";
-// import { IoMdCloseCircleOutline } from "react-icons/io";
-// import { TiMinusOutline } from "react-icons/ti";
+import Swal from "sweetalert2";
 import { FaRegWindowClose } from "react-icons/fa";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { useTranslation } from "react-i18next";
@@ -127,6 +126,33 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
   ============================================================ */
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
+
+    const missingFields = validateMissingClientFields();
+
+    if (missingFields.length > 0) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Campos incompletos",
+        html: `
+          <p>Faltan los siguientes campos por completar:</p>
+          <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
+            ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
+          </ul>
+        `,
+        confirmButtonText: "Entendido",
+        confirmButtonColor: "#3085d6",
+        background: "#f9fafb",
+        color: "#1e293b",
+        customClass: {
+          popup: "swal-over-modal",
+        },
+        didOpen: (el) => {
+          el.style.zIndex = "20000";
+        },
+      });
+      return;
+    }
+
     const resp = await ClientsFormController.createClient(
       clientsState.clientForm,
       mode,
@@ -134,18 +160,56 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
     );
 
     if (resp) {
-      window.alert(
-        t("clients.alertSuccess", { defaultValue: "Cliente guardado correctamente" })
-      );
+      await Swal.fire({
+        icon: "success",
+        title: t("clients.alertSuccess", { defaultValue: "Cliente guardado correctamente" }),
+        confirmButtonColor: "#22c55e",
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: {
+          popup: "swal-over-modal",
+        },
+        didOpen: (el) => {
+          el.style.zIndex = "20000";
+        },
+      });
+
       clientsDispatch({ type: "clear-state" });
       setOpenModal(false);
       window.location.reload();
     } else {
-      window.alert(
-        t("clients.alertError", { defaultValue: "Error al guardar el cliente" })
-      );
+      await Swal.fire({
+        icon: "error",
+        title: t("clients.alertError", { defaultValue: "Error al guardar el cliente" }),
+        confirmButtonColor: "#ef4444",
+        customClass: {
+          popup: "swal-over-modal",
+        },
+        didOpen: (el) => {
+          el.style.zIndex = "20000";
+        },
+      });
     }
   };
+
+  /* ============================================================
+    ✅ Validación detallada
+  ============================================================ */
+  const validateMissingClientFields = () => {
+    const c = clientsState.clientForm;
+    const missing: string[] = [];
+
+    if (!c.name.trim()) missing.push("Nombre");
+    if (!c.alias.trim()) missing.push("Alias");
+    if (!c.field.trim()) missing.push("Giro o campo de negocio");
+    if (!c.rfc.trim()) missing.push("RFC");
+    if (!c.address.trim()) missing.push("Dirección");
+    if (!c.email.trim()) missing.push("Correo electrónico");
+    if (!c.postal_code || c.postal_code === 0) missing.push("Código postal");
+
+    return missing;
+  };
+
 
   /* ============================================================
      ✅ Validación simple
@@ -176,24 +240,6 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           dark:bg-slate-800 dark:text-cyan-300
         "
       >
-        {/* HEADER
-        <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-          <button
-            onClick={() => setOpenModal(false)}
-            className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-          >
-            <IoMdCloseCircleOutline />
-          </button>
-          <button
-            onClick={() => setOpenModal(false)}
-            className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
-          >
-            <TiMinusOutline />
-          </button>
-          <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-            {mode === "edit" ? t("clients.edit") : t("clients.create")}
-          </p>
-        </div> */}
 
         {/* BODY */}
         <div className="overflow-auto p-5">
@@ -342,7 +388,6 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           </button>
           <UserPermissions permission="saveClient" role={role} >
             <button
-              disabled={!isValid()}
               onClick={handleSubmit}
               className={
                 isValid()

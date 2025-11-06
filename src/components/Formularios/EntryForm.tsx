@@ -2,14 +2,13 @@ import React, { useEffect, useState, type ChangeEvent } from 'react';
 import { Autocomplete, Modal, TextField } from '@mui/material'
 import { type Dispatch, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next';
-// import { IoMdCloseCircleOutline } from "react-icons/io";
-// import { TiMinusOutline } from "react-icons/ti";
 import { entryFormController } from './EntryForm.controller';
 import type { Clients, Status, Supplier } from '../../types/collections';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
 import { pb } from '../../helpers/pocketbase/pocketbase';
 import { FaRegWindowClose } from "react-icons/fa";
 import UserPermissions from '../../hooks/usePremission';
+import Swal from "sweetalert2";
 
 type EntryFormProops = {
     openModal:boolean;
@@ -131,19 +130,92 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
             rate.files.length != 0
     }
 
-    const handleSubmit = (e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-        e.preventDefault()
-        entryFormController.createEntry(entryState.entryForm,status,mode,entryState.entryList[0]).then((resp)=>{
-            if(resp){
-                window.alert(`${t("Entrys.alerSucces")}`)
-                entryDispatch({type:'clear-state'})
-                setOpenModal(false)
-                window.location.reload()
-            }else{
-                window.alert(`${t("Entrys.alertError")}`)
-            }
-        })
-    }
+    const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        e.preventDefault();
+
+        const missingFields = validateMissingEntryFields();
+
+        if (missingFields.length > 0) {
+            await Swal.fire({
+            icon: "warning",
+            title: "Campos incompletos",
+            html: `
+                <p>Faltan los siguientes campos por completar:</p>
+                <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
+                ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
+                </ul>
+            `,
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#3085d6",
+            background: "#f9fafb",
+            color: "#1e293b",
+            customClass: {
+                popup: "swal-over-modal",
+            },
+            didOpen: (el) => {
+                el.style.zIndex = "20000";
+            },
+            });
+            return;
+        }
+
+        const resp = await entryFormController.createEntry(
+            entryState.entryForm,
+            status,
+            mode,
+            entryState.entryList[0]
+        );
+
+        if (resp) {
+            await Swal.fire({
+            icon: "success",
+            title: t("Entrys.alerSucces", { defaultValue: "Entrada guardada correctamente" }),
+            confirmButtonColor: "#22c55e",
+            timer: 1500,
+            showConfirmButton: false,
+            customClass: {
+                popup: "swal-over-modal",
+            },
+            didOpen: (el) => {
+                el.style.zIndex = "20000";
+            },
+            });
+
+            entryDispatch({ type: "clear-state" });
+            setOpenModal(false);
+            window.location.reload();
+        } else {
+            await Swal.fire({
+            icon: "error",
+            title: t("Entrys.alertError", { defaultValue: "Error al guardar la entrada" }),
+            confirmButtonColor: "#ef4444",
+            customClass: {
+                popup: "swal-over-modal",
+            },
+            didOpen: (el) => {
+                el.style.zIndex = "20000";
+            },
+            });
+        }
+    };
+
+    /* ============================================================
+    ✅ Validación detallada de campos faltantes
+    ============================================================ */
+    const validateMissingEntryFields = () => {
+    const rate = entryState.entryForm;
+    const missing: string[] = [];
+
+    if (!rate.public_key) missing.push("Clave pública");
+    if (!rate.invoice_number) missing.push("Número de factura");
+    if (!rate.tax_id) missing.push("TAX ID");
+    if (!rate.id_client) missing.push("Cliente");
+    if (!rate.id_supplier) missing.push("Proveedor");
+    if (!rate.files || rate.files.length === 0) missing.push("Archivo adjunto");
+
+    return missing;
+    };
+
 
     const renderPreview = (file: File | string) => {
         // 📌 Caso 1: cuando es File del navegador
@@ -231,20 +303,6 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     return (
         <Modal open={openModal} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <div className="flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300dark:bg-slate-800 dark:text-cyan-300">
-                {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-                    <button
-                    onClick={() => setOpenModal(false)}
-                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-                    >
-                    <IoMdCloseCircleOutline />
-                    </button>
-                    <button onClick={(()=>setOpenModal(false))} className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer">
-                    <TiMinusOutline />
-                    </button>
-                    <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-                    {t("Entrys.btnCreate")}
-                    </p>
-                </div> */}
                 <div className=" overflow-auto p-5 dark:bg-slate-800">
                     <form className=" grid grid-cols-2 gap-5 " >
                         <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.public_key")} />
@@ -362,7 +420,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                         Cancelar
                     </button>
                     <UserPermissions permission="saveEntry" role={role} >
-                        <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
+                        <button onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
                             {mode == "create"? t("Entrys.form.btnCreate"):t("Entrys.form.btnUpdate")}
                         </button>
                     </UserPermissions>

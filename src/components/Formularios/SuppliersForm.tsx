@@ -1,7 +1,6 @@
     import React from "react";
     import { Modal, TextField } from "@mui/material";
-    // import { IoMdCloseCircleOutline } from "react-icons/io";
-    // import { TiMinusOutline } from "react-icons/ti";
+    import Swal from "sweetalert2";
     import { useTranslation } from "react-i18next";
     import { SuppliersFormController } from "./SuppliersForm.controller";
     import { useClassifyContext } from "../../hooks/useClassifyContext";
@@ -48,27 +47,91 @@ import UserPermissions from "../../hooks/usePremission";
         💾 Guardar proveedor
     ============================================================ */
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+            e.preventDefault();
 
-        const resp = await SuppliersFormController.createSupplier(
-        suppliersState.supplierForm,
-        mode,
-        suppliersState.supplierList[0]
-        );
+            const missingFields = validateMissingSupplierFields();
 
-        if (resp) {
-        window.alert(
-            t("suppliers.alertSuccess", { defaultValue: "Proveedor guardado correctamente" })
-        );
-        suppliersDispatch({ type: "clear-state" });
-        setOpenModal(false);
-        window.location.reload();
-        } else {
-        window.alert(
-            t("suppliers.alertError", { defaultValue: "Error al guardar el proveedor" })
-        );
-        }
-    };
+            if (missingFields.length > 0) {
+                await Swal.fire({
+                icon: "warning",
+                title: "Campos incompletos",
+                html: `
+                    <p>Faltan los siguientes campos por completar:</p>
+                    <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
+                    ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
+                    </ul>
+                `,
+                confirmButtonText: "Entendido",
+                confirmButtonColor: "#3085d6",
+                background: "#f9fafb",
+                color: "#1e293b",
+                customClass: {
+                    popup: "swal-over-modal",
+                },
+                didOpen: (el) => {
+                    el.style.zIndex = "20000";
+                },
+                });
+                return;
+            }
+
+            const resp = await SuppliersFormController.createSupplier(
+                suppliersState.supplierForm,
+                mode,
+                suppliersState.supplierList[0]
+            );
+
+            if (resp) {
+                await Swal.fire({
+                icon: "success",
+                title: t("suppliers.alertSuccess", { defaultValue: "Proveedor guardado correctamente" }),
+                confirmButtonColor: "#22c55e",
+                timer: 1500,
+                showConfirmButton: false,
+                customClass: {
+                    popup: "swal-over-modal",
+                },
+                didOpen: (el) => {
+                    el.style.zIndex = "20000";
+                },
+                });
+
+                suppliersDispatch({ type: "clear-state" });
+                setOpenModal(false);
+                window.location.reload();
+            } else {
+                await Swal.fire({
+                icon: "error",
+                title: t("suppliers.alertError", { defaultValue: "Error al guardar el proveedor" }),
+                confirmButtonColor: "#ef4444",
+                customClass: {
+                    popup: "swal-over-modal",
+                },
+                didOpen: (el) => {
+                    el.style.zIndex = "20000";
+                },
+                });
+            }
+        };
+
+        /* ============================================================
+        ✅ Validación de campos faltantes
+        ============================================================ */
+        const validateMissingSupplierFields = () => {
+        const s = suppliersState.supplierForm;
+        const missing: string[] = [];
+
+        if (!s.name.trim()) missing.push("Nombre");
+        if (!s.alias.trim()) missing.push("Alias");
+        if (!s.rfc.trim()) missing.push("RFC");
+        if (!s.vin.trim()) missing.push("VIN");
+        if (!s.address.trim()) missing.push("Dirección");
+        if (!s.email.trim()) missing.push("Correo electrónico");
+        if (!s.phone_number.trim()) missing.push("Teléfono");
+        if (!s.postal_code.trim()) missing.push("Código postal");
+
+        return missing;
+        };
 
     /* ============================================================
         ✅ Validación básica
@@ -251,7 +314,6 @@ import UserPermissions from "../../hooks/usePremission";
 
             <UserPermissions permission="saveSupplier" role={role}> 
                 <button
-                    disabled={!isValid()}
                     type="submit"
                     onClick={handleSubmit}
                     className={
