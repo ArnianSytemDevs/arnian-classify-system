@@ -5,11 +5,11 @@ import { pb } from "./pocketbase";
 ──────────────────────────────── */
 
 const baseStatus = [
-  { name: "Active", code: "1", color: "18F55A", description: "Estado de activo" },
+  { name: "Active", code: "1", color: "18F55A", description: "Estado activo" },
   { name: "Inactive", code: "2", color: "F51818", description: "Estado inactivo" },
-  { name: "Edit", code: "3", color: "F5F518", description: "En estado de edición" },
-  { name: "Deprected", code: "4", color: "B0BABF", description: "Estado inactivo y dejando de funcionar" },
-  { name: "Finished", code: "5", color: "26F9FF", description: "Proceso finalizado" },
+  { name: "Edit", code: "3", color: "F5F518", description: "En edición" },
+  { name: "Deprected", code: "4", color: "B0BABF", description: "Obsoleto" },
+  { name: "Finished", code: "5", color: "26F9FF", description: "Finalizado" },
   { name: "In_review", code: "6", color: "F527C8", description: "En revisión" },
   { name: "In_classify", code: "7", color: "27F5CF", description: "En clasificación" },
 ];
@@ -23,146 +23,106 @@ const baseCategories = [
   { name: "Accounting", level: 6 },
 ];
 
-/* ────────────────────────────────
-   📏 Anexo 22-07 - Unidades y Medidas
-──────────────────────────────── */
-
-const ANEXO_22_07: { code: number; name: string }[] = [
-  { code: 1, name: "Kilo" },
-  { code: 2, name: "Gramo" },
-  { code: 3, name: "Metro lineal" },
-  { code: 4, name: "Metro cuadrado" },
-  { code: 5, name: "Metro cúbico" },
-  { code: 6, name: "Pieza" },
-  { code: 7, name: "Cabeza" },
-  { code: 8, name: "Litro" },
-  { code: 9, name: "Par" },
-  { code: 10, name: "Kilowatt" },
-  { code: 11, name: "Millar" },
-  { code: 12, name: "Juego" },
-  { code: 13, name: "Kilowatt/Hora" },
-  { code: 14, name: "Tonelada" },
-  { code: 15, name: "Barril" },
-  { code: 16, name: "Gramo neto" },
-  { code: 17, name: "Decenas" },
-  { code: 18, name: "Cientos" },
-  { code: 19, name: "Docenas" },
-  { code: 20, name: "Caja" },
-  { code: 21, name: "Botella" },
-  { code: 22, name: "Carat" },
+const ANEXO_22_07 = [
+  "Kilo","Gramo","Metro lineal","Metro cuadrado","Metro cúbico","Pieza","Cabeza","Litro",
+  "Par","Kilowatt","Millar","Juego","Kilowatt/Hora","Tonelada","Barril","Gramo neto",
+  "Decenas","Cientos","Docenas","Caja","Botella","Carat"
 ];
 
-const pkUnit = (code: number) => `A22U-${String(code).padStart(2, "0")}`;
-const pkMeas = (code: number) => `A22M-${String(code).padStart(2, "0")}`;
+const pkUnit = (i: number) => `A22U-${String(i + 1).padStart(2, "0")}`;
+const pkMeas = (i: number) => `A22M-${String(i + 1).padStart(2, "0")}`;
 
 /* ────────────────────────────────
-   🧩 Inicializador del sistema
+   🧩 Inicializador optimizado
 ──────────────────────────────── */
 
 export class SystemInitializer {
-  public static async initializeSystemData() {
+  static async initializeSystemData() {
     try {
-      console.log("🚀 Verificando estado del sistema...");
+      console.log("🚀 Verificando datos base del sistema...");
 
-      // 1️⃣ Si ya existen datos en Status o Units, asumimos que el sistema ya fue inicializado
-      const [statusList, unitsList] = await Promise.all([
-        pb.collection("Status").getFullList(),
-        pb.collection("Units").getFullList(),
+      // ✅ Verificar si ya está inicializado (consultas mínimas)
+      const [statusCount, unitCount] = await Promise.all([
+        pb.collection("Status").getList(1, 1),
+        pb.collection("Units").getList(1, 1),
       ]);
 
-      if (statusList.length > 0 && unitsList.length >= ANEXO_22_07.length) {
-        console.log("✅ Sistema ya inicializado. No se requieren cambios.");
+      if (statusCount.totalItems > 0 && unitCount.totalItems >= ANEXO_22_07.length) {
+        console.log("✅ Sistema ya inicializado, no se requieren cambios.");
         return;
       }
 
-      console.log("⚙️ Inicializando datos base del sistema por primera vez...");
+      console.log("⚙️ Iniciando carga base del sistema...");
+      await this.seedBaseData();
 
-      // 2️⃣ Reemplazar Units y Measurements con el Anexo 22-07
-      await this.replaceAnexo2207UnitsAndMeasurements();
-
-      // 3️⃣ Asegurar Status y Category_user
-      await Promise.all([
-        this.ensureCollectionData("Status", baseStatus, "name"),
-        this.ensureCollectionData("Category_user", baseCategories, "name"),
-      ]);
-
-      console.log("✅ Inicialización completa y verificada.");
+      console.log("✅ Inicialización completada sin sobrecargar el servidor.");
     } catch (err) {
-      console.error("❌ Error al inicializar datos del sistema:", err);
+      console.error("❌ Error al inicializar datos base:", err);
     }
   }
 
   /* ────────────────────────────────
-     🔄 Limpia e inserta Anexo 22-07
+     🌱 Inserción en bloques pequeños
   ──────────────────────────────── */
-  private static async replaceAnexo2207UnitsAndMeasurements() {
-    console.log("⚙️ Configurando Units y Measurements según Anexo 22-07...");
+  private static async seedBaseData() {
+    // 1️⃣ Status y Categorías (ligeros)
+    await this.ensureCollection("Status", baseStatus, "name");
+    await this.ensureCollection("Category_user", baseCategories, "name");
 
-    const [units, measurements] = await Promise.all([
-      pb.collection("Units").getFullList(),
-      pb.collection("Measurements").getFullList(),
-    ]);
+    // 2️⃣ Units y Measurements → se crean si faltan
+    await this.ensureAnexo2207("Units", pkUnit);
+    await this.ensureAnexo2207("Measurements", pkMeas);
+  }
 
-    // Si ya hay datos y parecen correctos, no los tocamos
-    if (units.length >= ANEXO_22_07.length && measurements.length >= ANEXO_22_07.length) {
-      console.log("✔️ Units y Measurements ya configuradas, sin cambios.");
+  /* ────────────────────────────────
+     🔄 Inserción condicional de Anexo
+  ──────────────────────────────── */
+  private static async ensureAnexo2207(collection: string, keyFn: (i: number) => string) {
+    const existing = await pb.collection(collection).getFullList({ requestKey: null });
+    if (existing.length >= ANEXO_22_07.length) {
+      console.log(`✔️ ${collection} ya contiene todas las entradas.`);
       return;
     }
 
-    // Limpiar tablas solo si están incompletas
-    if (units.length > 0) {
-      console.log(`🧹 Eliminando ${units.length} registros de Units...`);
-      await Promise.all(units.map((u: any) => pb.collection("Units").delete(u.id)));
-    }
-    if (measurements.length > 0) {
-      console.log(`🧹 Eliminando ${measurements.length} registros de Measurements...`);
-      await Promise.all(measurements.map((m: any) => pb.collection("Measurements").delete(m.id)));
-    }
-
-    // Insertar nuevos datos
-    console.log("📦 Insertando nuevas unidades...");
-    await Promise.all(
-      ANEXO_22_07.map((r) =>
-        pb.collection("Units").create({
-          public_key: pkUnit(r.code),
-          name: r.name,
-          alias: r.name,
-        })
-      )
+    const missingItems = ANEXO_22_07.filter(
+      (name) => !existing.some((e) => e.name === name)
     );
 
-    console.log("⚖️ Insertando nuevas medidas...");
-    await Promise.all(
-      ANEXO_22_07.map((r) =>
-        pb.collection("Measurements").create({
-          public_key: pkMeas(r.code),
-          name: r.name,
-          alias: r.name,
-        })
-      )
-    );
+    console.log(`📦 Agregando ${missingItems.length} registros a ${collection}...`);
 
-    console.log("✅ Units y Measurements actualizadas correctamente.");
+    // 🔸 Insertar en bloques pequeños (para evitar 429 Too Many Requests)
+    const batchSize = 5;
+    for (let i = 0; i < missingItems.length; i += batchSize) {
+      const chunk = missingItems.slice(i, i + batchSize);
+      for (const [index, name] of chunk.entries()) {
+        await pb.collection(collection).create({
+          public_key: keyFn(i + index),
+          name,
+          alias: name,
+        });
+      }
+      await new Promise((r) => setTimeout(r, 250)); // ⏳ Delay preventivo
+    }
   }
 
   /* ────────────────────────────────
-     🧾 Verifica o inserta datos base
+     🧾 Inserta solo si faltan registros
   ──────────────────────────────── */
-  private static async ensureCollectionData(
-    collection: string,
-    baseData: any[],
-    keyField: string
-  ) {
-    const existing = await pb.collection(collection).getFullList();
-    const missing = baseData.filter(
-      (d) => !existing.some((e: any) => e[keyField] === d[keyField])
+  private static async ensureCollection(collection: string, data: any[], keyField: string) {
+    const existing = await pb.collection(collection).getFullList({ requestKey: null });
+    const missing = data.filter(
+      (d) => !existing.some((e) => e[keyField] === d[keyField])
     );
 
-    if (missing.length > 0) {
-      console.warn(`⚠️ Insertando ${missing.length} elementos en ${collection}`);
-      await Promise.all(missing.map((item) => pb.collection(collection).create(item)));
-    } else {
+    if (missing.length === 0) {
       console.log(`✔️ ${collection} ya contiene todos los registros base.`);
+      return;
+    }
+
+    console.log(`⚙️ Agregando ${missing.length} nuevos registros en ${collection}...`);
+    for (const item of missing) {
+      await pb.collection(collection).create(item);
+      await new Promise((r) => setTimeout(r, 200)); // 🔹 Espera corta para evitar saturación
     }
   }
 }

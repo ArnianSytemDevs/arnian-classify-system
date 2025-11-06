@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Modal, TextField, Autocomplete, Select, MenuItem } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
-// import { IoMdCloseCircleOutline } from "react-icons/io";
-// import { FaRegSave } from "react-icons/fa";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-// import { TiMinusOutline } from "react-icons/ti";
+import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 import { ProductFormController } from "./ProductForm.controller";
 import { type Status, type Measurement, type Supplier } from "../../types/collections";
@@ -182,21 +180,87 @@ const renderPreview = (file: File | string) => {
   };
 
 
-  const handleSubmit = (e:React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    e.preventDefault()
-    ProductFormController.createProduct(productState.productForm,status,mode,productState.productList[0],classifyDispatch).then((resp)=>{
-      if(resp){
-        window.alert(`${t("products.alerSucces")}`)
-        productDispatch({type:'clear-state'})
-        setOpenModal(false)
-        if(mode == "create" || mode == "edit"){
-          window.location.reload()
-        }
-      }else{
-        window.alert(`${t("products.alertError")}`)
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+
+    const missingFields = validateMissingFields();
+
+    if (missingFields.length > 0) {
+      await Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      html: `
+        <p>Faltan los siguientes campos por completar:</p>
+        <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
+          ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
+        </ul>
+      `,
+      confirmButtonText: "Entendido",
+      confirmButtonColor: "#3085d6",
+      background: "#f9fafb",
+      color: "#1e293b",
+      customClass: {
+        popup: "swal-over-modal",
+      },
+      didOpen: (el) => {
+        // en caso de conflictos, forzamos inline
+        el.style.zIndex = "20000";
+      },
+    });
+      return;
+    }
+
+    // ✅ Si todo está correcto, guardar producto
+    const resp = await ProductFormController.createProduct(
+      productState.productForm,
+      status,
+      mode,
+      productState.productList[0],
+      classifyDispatch
+    );
+
+    if (resp) {
+      await Swal.fire({
+        icon: "success",
+        title: t("products.alerSucces"),
+        confirmButtonColor: "#22c55e",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      productDispatch({ type: "clear-state" });
+      setOpenModal(false);
+
+      if (mode === "create" || mode === "edit") {
+        window.location.reload();
       }
-    })
-  }
+    } else {
+      await Swal.fire({
+        icon: "error",
+        title: t("products.alertError"),
+        confirmButtonColor: "#ef4444",
+      });
+    }
+  };
+
+  const validateMissingFields = () => {
+    const rate = productState.productForm;
+    const missing: string[] = [];
+
+    if (!rate.alias) missing.push("Alias");
+    if (!rate.brand) missing.push("Marca");
+    if (!rate.code) missing.push("Código");
+    if (!rate.unit_price || rate.unit_price === 0) missing.push("Precio unitario");
+    if (!rate.description) missing.push("Descripción");
+    if (!rate.id_measurement) missing.push("Medida");
+    if (!rate.id_supplier) missing.push("Proveedor");
+    if (!rate.model) missing.push("Modelo");
+    if (!rate.name) missing.push("Nombre");
+    if (!rate.part_number) missing.push("Número de parte");
+    if (!rate.serial_number) missing.push("Número de serie");
+    if (!rate.weight || rate.weight === 0) missing.push("Peso");
+
+    return missing;
+  };
 
   const isValid = () =>{
     const rate = productState.productForm
@@ -386,7 +450,7 @@ const renderPreview = (file: File | string) => {
             Cancelar
           </button>
           <UserPermissions permission="saveProduct" role={role}> 
-            <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
+            <button onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
               { mode == "edit"?  t("products.btnUpdate") : t("products.btnCreate")}
             </button>
           </UserPermissions>
