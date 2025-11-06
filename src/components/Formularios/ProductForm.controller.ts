@@ -11,20 +11,25 @@ import { v4 as uuidv4 } from "uuid";
 
 export class ProductFormController {
     public static async getSuppliers(nameFilter: string | undefined, mode: string) {
+        try {
+            let list;
 
-        let list;
-
-        if (mode === "edit" && nameFilter) {
+            if (mode === "edit" && nameFilter) {
             // Buscar por ID
-            list = await getSupplierList(undefined, undefined, { id: nameFilter });
-        } else if (nameFilter) {
+            list = await getSupplierList(undefined, 10, { id: nameFilter });
+            } else if (nameFilter) {
             // Buscar por nombre
-            list = await getSupplierList(undefined, undefined, { name: nameFilter });
-        } else {
+            list = await getSupplierList(undefined, 10, { name: nameFilter });
+            } else {
+            // 🔹 Si no hay filtros, obtener los últimos 10 creados
+            list = await getSupplierList(1, 10, {}, true); // ⬅️ usamos nuevo parámetro "latest"
+            }
+
+            return list?.items ?? [];
+        } catch (error) {
+            console.error("❌ Error en getSuppliers:", error);
             return [];
         }
-
-        return list?.items ?? [];
     }
 
 
@@ -76,6 +81,7 @@ export class ProductFormController {
         formData.append("is_deleted", "false");
         formData.append("part_number", prodForm.part_number?.toString() || "");
         formData.append("description", prodForm.description);
+        formData.append("traduction", prodForm.traduction);
         formData.append("model", prodForm.model);
         formData.append("brand", prodForm.brand);
         formData.append("serial_number", prodForm.serial_number);

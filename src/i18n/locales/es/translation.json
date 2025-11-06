@@ -3,7 +3,9 @@
         "title1":"Entradas",
         "title2":"Productos",
         "title3":"Usuarios",
-        "title4":"Logs del sistema"
+        "title4":"Logs del sistema",
+        "title5":"Cliente",
+        "title6":"Proveedor"
     },
     "submenu":"Acciones",
     "login": {
@@ -42,6 +44,7 @@
         "btnDelete":"Eliminar clasificacion",
         "btnGet":"Lista clasificacion",
         "btnStart":"Iniciar clasificacion",
+        "btnReview":"Iniciar revision",
         "lblProd":"Buscar y agregar producto",
         "list":{
             "lblOptions":"Opciones",
@@ -63,7 +66,11 @@
             "lblFractionMX":"Fracción arancelaria",
             "lblParty":"Partidas",
             "lblItem":"Item",
-            "lblLumps":"Bultos"
+            "lblLumps":"Bultos",
+            "lblTotalValue":"Valor total",
+            "lblDamage":"Dañado?",
+            "lblDesc":"Descripcion",
+            "public_key":"Numero de carga"
         }
     },
     "Users":{
@@ -71,5 +78,19 @@
         "btnUpdate":"Actualizar usuarios",
         "btnDelete":"Eliminar usuarios",
         "btnGet":"Lista usuarios"
+    },
+    "Clients":{
+        "btnCreate":"Crear clientes",
+        "btnUpdate":"Actualizar clientes",
+        "btnDelete":"Eliminar clientes",
+        "btnGet":"Listado de clientes"
+    },
+    "Suppliers":{
+        "btnCreate":"Crear proveedores",
+        "btnUpdate":"Actualizar proveedores",
+        "btnDelete":"Eliminar proveedores",
+        "btnGet":"Listado de proveedores",
+        "alerSucces":"El proveedor ha sido creado con éxito",
+        "alertError":"Se produjo un error al crear el proveedor, inténtelo nuevamente más tarde"
     }
 }

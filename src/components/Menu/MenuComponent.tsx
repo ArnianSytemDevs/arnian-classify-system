@@ -1,15 +1,21 @@
 import { useState } from "react";
 import logo from "../../assets/icon.png";
-import { FaBoxes, FaEnvelopeOpenText, FaUsers } from "react-icons/fa";
-import { SiAwssecretsmanager } from "react-icons/si";
+import { FaBoxes, FaEnvelopeOpenText } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 import { useTranslation } from "react-i18next";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
+import { FaUserLarge } from "react-icons/fa6";
+import { IoBusiness } from "react-icons/io5";
+import { RiLogoutBoxLine } from "react-icons/ri";
+import HomeController from "../../pages/Home/Home.controller";
+import { useNavigate } from 'react-router';
+import Swal from "sweetalert2";
 
 export default function MenuComponent() {
-    const { setSelectedWindow } = useClassifyContext();
+    const { setSelectedWindow,classifyDispatch, productDispatch, entryDispatch, suppliersDispatch, clientsDispatch } = useClassifyContext();
     const [lengOpen, setLengOpen] = useState(false);
     const { t, i18n } = useTranslation();
+    const navigate = useNavigate()
 
     const changeLanguage = (lang: "en" | "es") => {
         i18n.changeLanguage(lang);
@@ -23,6 +29,63 @@ export default function MenuComponent() {
     // ✅ Tooltip mejorado para dark mode
     const tooltip =
         "absolute left-full ml-2 px-2 py-1 text-sm whitespace-nowrap bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 rounded shadow-md opacity-0 group-hover:opacity-100 transition";
+
+    
+    const handleLogout = async () => {
+        const confirm = await Swal.fire({
+            icon: "question",
+            title: "¿Cerrar sesión?",
+            text: "Tu sesión actual se cerrará y volverás a la pantalla de inicio.",
+            showCancelButton: true,
+            confirmButtonText: "Sí, cerrar sesión",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#9ca3af",
+            background: "#f9fafb",
+            color: "#1e293b",
+        });
+
+        if (!confirm.isConfirmed) return; // 🚫 Usuario canceló
+
+        try {
+            const resp = await HomeController.logout();
+
+            if (resp.status === "success") {
+                entryDispatch({type:"clear-state"})
+                productDispatch({ type:"clear-state" })
+                classifyDispatch({ type:"clear-all" })
+                suppliersDispatch({ type:"clear-state" })
+                clientsDispatch({ type:"clear-state" })
+            await Swal.fire({
+                icon: "success",
+                title: "Sesión cerrada",
+                text: resp.message,
+                confirmButtonColor: "#22c55e",
+                timer: 1500,
+                showConfirmButton: false,
+            });
+            } else {
+            await Swal.fire({
+                icon: "error",
+                title: "Error al cerrar sesión",
+                text: resp.message || "Ocurrió un problema al cerrar tu sesión.",
+                confirmButtonColor: "#ef4444",
+            });
+            }
+
+            // 🔁 Redirigir siempre después del intento (éxito o error)
+            navigate("/");
+        } catch (err) {
+            console.error("❌ Error inesperado al cerrar sesión:", err);
+            await Swal.fire({
+            icon: "error",
+            title: "Error inesperado",
+            text: "No se pudo cerrar la sesión correctamente.",
+            confirmButtonColor: "#ef4444",
+            });
+            navigate("/");
+        }
+    };
 
     return (
         <div className="flex flex-col border-r border-gray-300 dark:border-gray-600 items-center h-screen w-[5%] bg-gray-50 dark:bg-slate-800">
@@ -55,12 +118,34 @@ export default function MenuComponent() {
                     <FaBoxes className="text-2xl" />
                     <span className={tooltip}>{t("menu.title1")}</span>
                 </button>
+                
+                <button
+                    className={baseBtn}
+                    aria-label="Clients"
+                    onClick={() => {
+                        setSelectedWindow(3);
+                    }}
+                >
+                    <FaUserLarge className="text-2xl" />
+                    <span className={tooltip}>{t("menu.title5")}</span>
+                </button>
 
                 <button
                     className={baseBtn}
+                    aria-label="Suppliers"
+                    onClick={() => {
+                        setSelectedWindow(4);
+                    }}
+                >
+                    <IoBusiness className="text-2xl" />
+                    <span className={tooltip}>{t("menu.title6")}</span>
+                </button>
+
+                {/* <button
+                    className={baseBtn}
                     aria-label="Users"
                     onClick={() => {
-                        setSelectedWindow(3);
+                        setSelectedWindow(5);
                     }}
                 >
                     <FaUsers className="text-2xl" />
@@ -71,13 +156,16 @@ export default function MenuComponent() {
                     className={baseBtn}
                     aria-label="Logs"
                     onClick={() => {
-                        setSelectedWindow(4);
+                        setSelectedWindow(6);
                     }}
                 >
                     <SiAwssecretsmanager className="text-2xl" />
                     <span className={tooltip}>{t("menu.title4")}</span>
-                </button>
+                </button> */}
             </div>
+            <button className={baseBtn} onClick={(()=>{ handleLogout() })} aria-label="Logout"  >
+                <RiLogoutBoxLine className="text-2xl" />
+            </button>
 
             {/* Selector de idioma abajo */}
             <div
@@ -85,6 +173,8 @@ export default function MenuComponent() {
                 onMouseEnter={() => setLengOpen(true)}
                 onMouseLeave={() => setLengOpen(false)}
             >
+                
+
                 <button className={baseBtn} aria-label="Language Selector">
                     <MdTranslate className="text-2xl" />
                 </button>

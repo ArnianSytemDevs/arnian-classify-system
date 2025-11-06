@@ -1,206 +1,198 @@
-import { pb, type FilterOptions } from "./pocketbase";
-import buildFilter from "./pocketbase";
-
-export type productsFilters ={
-    id?: string;
-    public_key?: string;
-    name?: string;
-    alias?: string;
-    code?: string;
-    is_deleted?: boolean;
-    part_number?: string;
-    description?: string;
-    model?: string;
-    brand?: string;
-    serial_number?: string;
-    id_measurement?: string; // relation → Measurements
-    weight?: number;
-    id_status?: string;      // relation → Status
-    id_supplier?: string;    // relation → Supplier
-    files?: string[];        // file array
-    deprected?: boolean;
-    created?: string;
-    updated?: string;
-    origin_country?: string;
-    seller_country?: string;
-}
-
-export const buildFilters = (filters?: FilterOptions): string => {
-  if (!filters) return "";
-
-  const clauses: string[] = [];
-
-  if (filters.id) {
-    clauses.push(`id = "${filters.id}"`);
-  }
-
-  if (filters.public_key) {
-    clauses.push(`public_key = "${filters.public_key}"`);
-  }
-
-  if (filters.name) {
-    // `~` hace búsqueda parcial (contiene)
-    clauses.push(`name ~ "${filters.name}"`);
-  }
-
-  if (filters.status) {
-    clauses.push(`id_status = "${filters.status}"`);
-  }
-
-  if (filters.created) {
-    clauses.push(`created >= "${filters.created}"`);
-  }
-
-  if (filters.updated) {
-    clauses.push(`updated >= "${filters.updated}"`);
-  }
-
-  if (filters.deprected !== undefined) {
-    clauses.push(`deprected = ${filters.deprected}`);
-  }
-
-  return clauses.join(" && ");
-};
-
+import { pb } from "./pocketbase";
 
 /* =======================================================
-  PRODUCTS
+   📦 Tipado de filtros de productos
+======================================================= */
+export type ProductsFilters = {
+  id?: string;
+  public_key?: string;
+  name?: string;
+  alias?: string;
+  code?: string;
+  is_deleted?: boolean;
+  part_number?: string;
+  description?: string;
+  model?: string;
+  brand?: string;
+  serial_number?: string;
+  id_measurement?: string;
+  weight?: number;
+  id_status?: string;
+  id_supplier?: string;
+  files?: string[];
+  deprected?: boolean;
+  created?: string;
+  updated?: string;
+  origin_country?: string;
+  seller_country?: string;
+  is_classify?: boolean;
+  is_reviewed?: boolean;
+};
+
+/* =======================================================
+   🧠 Generador universal de filtros PocketBase
+======================================================= */
+export default function buildProductFilter(filters?: ProductsFilters): string {
+  if (!filters) return "";
+
+  const parts: string[] = [];
+
+  // 🔍 Campos tipo string
+  const textFields = [
+    "public_key",
+    "name",
+    "alias",
+    "code",
+    "part_number",
+    "description",
+    "model",
+    "brand",
+    "serial_number",
+    "origin_country",
+    "seller_country",
+  ];
+
+  for (const field of textFields) {
+    const value = (filters as any)[field];
+    if (value) parts.push(`${field} ~ "${value}"`);
+  }
+
+  // 🔢 Campos exactos o numéricos
+  if (filters.id) parts.push(`id = "${filters.id}"`);
+  if (filters.id_measurement) parts.push(`id_measurement = "${filters.id_measurement}"`);
+  if (filters.weight) parts.push(`weight = ${filters.weight}`);
+  if (filters.id_status) parts.push(`id_status = "${filters.id_status}"`);
+  if (filters.id_supplier) parts.push(`id_supplier = "${filters.id_supplier}"`);
+
+  // ✅ Booleanos
+  if (filters.deprected !== undefined)
+    parts.push(`deprected = ${filters.deprected}`);
+  if (filters.is_deleted !== undefined)
+    parts.push(`is_deleted = ${filters.is_deleted}`);
+  if (filters.is_classify !== undefined)
+    parts.push(`is_classify = ${filters.is_classify}`);
+  if (filters.is_reviewed !== undefined)
+    parts.push(`is_reviewed = ${filters.is_reviewed}`);
+
+  // 🕒 Fechas (>= desde)
+  if (filters.created)
+    parts.push(`created >= "${new Date(filters.created).toISOString()}"`);
+  if (filters.updated)
+    parts.push(`updated >= "${new Date(filters.updated).toISOString()}"`);
+
+  return parts.join(" && ");
+}
+
+/* =======================================================
+   🔁 Operaciones con PocketBase
 ======================================================= */
 
-// Obtener lista de productos con filtros
-export const getProducts = async (
+// 🔸 Obtener lista de productos con paginación y filtros
+export const getProductsList = async (
   page = 1,
-  perPage = 50,
-  filters?: FilterOptions
+  perPage = 10,
+  filters?: ProductsFilters,
+  latest = false
 ) => {
   try {
-    const filterStr = buildFilter(filters);
-    return await pb.collection("Products").getList(page, perPage, {
-      filter: filterStr,
-    });
+    const filterStr = buildProductFilter(filters);
+    const options: any = { filter: filterStr };
+
+    if (latest) options.sort = "-created";
+
+    return await pb.collection("Products").getList(page, perPage, options);
   } catch (error) {
-    console.error("Error en getProducts:", error);
+    console.error("❌ Error en getProductsList:", error);
     throw error;
   }
 };
 
-// Obtener un producto específico
-export const getProduct = async(id: string) => {
+// 🔸 Obtener un producto específico
+export const getProduct = async (id: string) => {
   return await pb.collection("Products").getOne(id);
 };
 
-// Suscripción en tiempo real a Products
-type SetProducts = React.Dispatch<React.SetStateAction<any[]>>;
+// 🔸 Crear producto
+export const createProduct = async (data: any) => {
+  try {
+    const record = await pb.collection("Products").create(data);
+    return { success: !!record?.id, record };
+  } catch (error: any) {
+    console.error("❌ Error al crear producto:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+// 🔸 Actualizar estado de deprecado
+export const updateProductDeprecated = async (id: string, deprecated: boolean) => {
+  try {
+    const record = await pb.collection("Products").update(id, { deprected: deprecated });
+    return { success: !!record?.id, record };
+  } catch (error: any) {
+    console.error("❌ Error al actualizar producto:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+/* =======================================================
+   ⚡ Suscripción en tiempo real (Realtime)
+======================================================= */
+let productSubscription: any = null;
 
 export const getRealtimeProducts = async (
-  setProducts: SetProducts,
-  filters?: any
+  setProducts: React.Dispatch<React.SetStateAction<any[]>>,
+  filters?: ProductsFilters,
+  page: number = 1,
+  perPage: number = 25
 ) => {
   try {
     pb.autoCancellation(false);
 
-    const filterStr = buildFilters(filters);
+    const filterStr = buildProductFilter(filters);
 
-    // Primera carga
-    const list = await pb.collection("Products").getFullList({ filter: filterStr });
-    setProducts(list);
+    // Cancelar subscripción anterior
+    if (productSubscription) {
+      await pb.collection("Products").unsubscribe("*");
+      productSubscription = null;
+    }
 
-    // Subscripción en tiempo real
-    pb.collection("Products").subscribe(
+    // 🔹 Obtener lista inicial
+    const list = await pb.collection("Products").getList(page, perPage, {
+      filter: filterStr,
+      sort: "-created",
+    });
+
+    setProducts(list.items);
+
+    // 🔹 Nueva subscripción
+    productSubscription = await pb.collection("Products").subscribe(
       "*",
-      function (e) {
+      (e) => {
         setProducts((prev) => {
-          if (e.action === "create") {
-            return [...prev, e.record];
+          switch (e.action) {
+            case "create":
+              return [e.record, ...prev].slice(0, perPage);
+            case "update":
+              return prev.map((p) => (p.id === e.record.id ? e.record : p));
+            case "delete":
+              return prev.filter((p) => p.id !== e.record.id);
+            default:
+              return prev;
           }
-          if (e.action === "update") {
-            return prev.map((p) => (p.id === e.record.id ? e.record : p));
-          }
-          if (e.action === "delete") {
-            return prev.filter((p) => p.id !== e.record.id);
-          }
-          return prev;
         });
       },
       { filter: filterStr }
     );
   } catch (error) {
-    console.error("Error en getRealtimeProducts:", error);
+    console.error("❌ Error en getRealtimeProducts:", error);
   }
 };
 
-
-export const unsubscribeProducts = () => {
-  pb.collection("Products").unsubscribe("*");
-};
-
-export const createProducts = async (data: any) => {
+export const unsubscribeProducts = async () => {
   try {
-    const record = await pb.collection("Products").create(data);
-
-    // si la API devuelve el registro creado
-    if (record && record.id) {
-      console.info("✅ Producto creado correctamente:", record);
-      return { success: true, record };
-    }
-
-    return { success: false, message: "No se pudo crear el producto." };
-  } catch (error: any) {
-    if (error.status === 400) {
-      console.error("❌ Error de validación:", error.data);
-      return { success: false, message: "Validación fallida", details: error.data };
-    }
-
-    if (error.status === 403) {
-      console.error("❌ Permisos insuficientes:", error.message);
-      return { success: false, message: "No tienes permisos para crear productos" };
-    }
-
-    console.error("❌ Error desconocido:", error);
-    return { success: false, message: "Error desconocido", details: error };
-  }
-};
-
-export const updateProductDeprecated = async (id: string, deprecated: boolean) => {
-  try {
-    const data = { deprected: deprecated };
-
-    const record = await pb.collection("Products").update(id, data);
-
-    if (record && record.id) {
-      console.info(`✅ Producto ${id} actualizado correctamente:`, record);
-      return { success: true, record };
-    }
-
-    return { success: false, message: "No se pudo actualizar el producto." };
-  } catch (error: any) {
-    if (error.status === 400) {
-      console.error("❌ Error de validación:", error.data);
-      return { success: false, message: "Validación fallida", details: error.data };
-    }
-
-    if (error.status === 403) {
-      console.error("❌ Permisos insuficientes:", error.message);
-      return { success: false, message: "No tienes permisos para actualizar productos" };
-    }
-
-    console.error("❌ Error desconocido:", error);
-    return { success: false, message: "Error desconocido", details: error };
-  }
-};
-
-export const getProductsList = async (
-  page = 1,
-  perPage = 50,
-  filters?: productsFilters
-) => {
-  try {
-    const filterStr = buildFilter(filters);
-    return await pb.collection('Products').getList(page, perPage, {
-      filter: filterStr,
-    });
+    await pb.collection("Products").unsubscribe("*");
+    productSubscription = null;
   } catch (error) {
-    console.error(`Error en getCollectionList(${'Products'}):`, error);
-    throw error;
+    console.warn("⚠️ Error al cancelar suscripción:", error);
   }
 };

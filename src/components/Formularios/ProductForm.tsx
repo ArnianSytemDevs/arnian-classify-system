@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Modal, TextField, Autocomplete, Select, MenuItem } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
-import { IoMdCloseCircleOutline } from "react-icons/io";
+// import { IoMdCloseCircleOutline } from "react-icons/io";
 // import { FaRegSave } from "react-icons/fa";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-import { TiMinusOutline } from "react-icons/ti";
+// import { TiMinusOutline } from "react-icons/ti";
 import { useTranslation } from "react-i18next";
 import { ProductFormController } from "./ProductForm.controller";
 import { type Status, type Measurement, type Supplier } from "../../types/collections";
 import type { ChangeEvent } from "react";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { FaRegWindowClose } from "react-icons/fa";
+import UserPermissions from "../../hooks/usePremission";
 
 type ProductFormProps = {
   openModal: boolean;
@@ -20,7 +21,7 @@ type ProductFormProps = {
 
 export default function ProductForm({ openModal, setOpenModal,mode }: ProductFormProps) {
 
-  const { productState,productDispatch,classifyDispatch } = useClassifyContext()
+  const { productState,productDispatch,classifyDispatch, role } = useClassifyContext()
   const [inputValue, setInputValue] = useState(""); // solo para búsqueda dinámica
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [measurement,setMeasurement] = useState<Measurement[]>([])
@@ -47,35 +48,48 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
     "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
     };
-  
+
   useEffect(() => {
-    if(openModal){
-      if (inputValue.trim() !== "") {
-        ProductFormController.getSuppliers(inputValue,mode).then((resp: any) => {
+    if (!openModal) return;
+
+    const delay = setTimeout(() => {
+      const trimmed = inputValue.trim();
+
+      ProductFormController.getSuppliers(trimmed !== "" ? trimmed : undefined, mode)
+        .then((resp: any) => {
           setSuppliers(resp);
-        });
-      } else {
-        setSuppliers([]);
+        })
+        .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+    }, 800); // Espera de 800ms para evitar spam al escribir
+
+    return () => clearTimeout(delay);
+  }, [inputValue, openModal, mode]);
+
+  useEffect(() => {
+    if (!openModal) return;
+
+    (async () => {
+      try {
+        const [measures, statuses]:any = await Promise.all([
+          ProductFormController.getMeasurement(),
+          ProductFormController.getStatus(),
+        ]);
+
+        setMeasurement(measures);
+        setStatus(statuses);
+
+        if (mode === "edit" && productState.productList[0]?.id_supplier) {
+          const supplierList:any = await ProductFormController.getSuppliers(
+            productState.productList[0].id_supplier,
+            mode
+          );
+          setSuppliers(supplierList);
+        }
+      } catch (err) {
+        console.error("❌ Error al cargar datos iniciales:", err);
       }
-    }
-  }, [inputValue]);
-  
-  useEffect(()=>{
-    if(openModal){
-      ProductFormController.getMeasurement().then((resp:any)=>{
-        setMeasurement(resp)
-      })
-      ProductFormController.getStatus().then((resp:any)=>{
-        setStatus(resp)
-      })
-      if (mode == 'edit') {
-        ProductFormController.getSuppliers(productState.productList[0].id_supplier, mode)
-          .then((resp: any) => {
-            setSuppliers(resp);
-          });
-      }
-    }
-  },[openModal])
+    })();
+  }, [openModal, mode, productState.productList]);
 
   useEffect(()=>{
     if(openModal == true && mode == 'edit' && measurement.length != 0 && status.length != 0 && suppliers.length != 0){
@@ -128,7 +142,7 @@ const renderPreview = (file: File | string) => {
 
       // ⚠️ Aquí necesitas el record completo, no solo el id
       const record = productState.productList[0]; // o el producto actual
-      const url = pb.files.getUrl(record, file);
+      const url = pb.files.getURL(record, file);
 
       if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
         return (
@@ -215,23 +229,20 @@ const renderPreview = (file: File | string) => {
         "
       >
         {/* Header */}
-        <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
+        {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
           <button
             onClick={() => setOpenModal(false)}
             className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
           >
             <IoMdCloseCircleOutline />
           </button>
-          {/* <button className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-green-500 rounded-sm cursor-pointer">
-            <FaRegSave />
-          </button> */}
           <button onClick={(()=>setOpenModal(false))} className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer">
             <TiMinusOutline />
           </button>
           <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
             {t("products.btnCreate")}
           </p>
-        </div>
+        </div> */}
 
         {/* Body */}
         <div className=" overflow-auto p-5">
@@ -240,11 +251,11 @@ const renderPreview = (file: File | string) => {
             <TextField sx={inputText} variant="filled" type="text" label="name" id="name" value={productState.productForm.name} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="alias" id="alias" value={productState.productForm.alias} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="code" id="code" value={productState.productForm.code} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="number" label="part_number" id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" inputProps={{ min: 0 }} label="part_number" id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="model" id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="brand" id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <TextField sx={inputText} variant="filled" type="text" label="serial_number" id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="number" label="unit_price MXN" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" label="unit_price USD" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
             <div>
               <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label="weight" fullWidth required />
               <Select
@@ -311,17 +322,25 @@ const renderPreview = (file: File | string) => {
 
             {/* Archivos con preview */}
             <TextField sx={inputText} variant="filled" type="text" label="description" id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
+            <TextField sx={inputText} variant="filled" type="text" label="traduccion" id="traduction" value={productState.productForm.traduction} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
+              <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
                 Archivos
               </label>
               <input
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="mb-4"
+                className="block w-full text-sm text-gray-700 
+                          border border-cyan-500 rounded-lg cursor-pointer 
+                          bg-cyan-50 dark:bg-slate-800 dark:text-gray-200 
+                          focus:outline-none file:mr-4 file:py-2 file:px-4 
+                          file:rounded-md file:border-0 
+                          file:text-sm file:font-semibold 
+                          file:bg-cyan-600 file:text-white 
+                          hover:file:bg-cyan-700"
               />
-
+              <br/>
               {productState.productForm.files.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {productState.productForm.files.map((file: File) => (
@@ -344,7 +363,7 @@ const renderPreview = (file: File | string) => {
 
                       <div
                         className="w-[100%] h-[100%] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-3"
-                        onClick={() => window.open(mode == 'edit'? pb.files.getUrl(productState.productList[0], file.toString()) : URL.createObjectURL(file))}
+                        onClick={() => window.open(mode == 'edit'? pb.files.getURL(productState.productList[0], file.toString()) : URL.createObjectURL(file))}
                       >
                         {renderPreview(file)}
                         <span className="mt-2 text-xs truncate w-24">{mode == 'edit' ? file.toString() : file.name}</span>
@@ -366,9 +385,11 @@ const renderPreview = (file: File | string) => {
           >
             Cancelar
           </button>
-          <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
-            { mode !== "classify"? t("actions.create") :t("products.btnCreateAdd")}
-          </button>
+          <UserPermissions permission="saveProduct" role={role}> 
+            <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
+              { mode == "edit"?  t("products.btnUpdate") : t("products.btnCreate")}
+            </button>
+          </UserPermissions>
         </div>
       </div>
     </Modal>

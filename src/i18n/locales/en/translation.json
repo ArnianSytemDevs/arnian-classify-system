@@ -3,7 +3,9 @@
         "title1":"Entrys",
         "title2":"Products",
         "title3":"Users",
-        "title4":"System Logs"
+        "title4":"System Logs",
+        "title5":"Clients",
+        "title6":"Suppliers"
     },
     "submenu":"Actions",
     "login": {
@@ -42,6 +44,7 @@
         "btnDelete":"Delete classify",
         "btnGet":"Classifty list",
         "btnStart":"Start classifying",
+        "btnReview":"Start review",
         "lblProd":"Search and add product",
         "list":{
             "lblOptions":"Options",
@@ -63,7 +66,11 @@
             "lblFractionMX":"Tariff fraction",
             "lblParty":"Party",
             "lblItem":"Item",
-            "lblLumps":"Lumps"
+            "lblDesc":"Description",
+            "lblLumps":"Lumps",
+            "lblTotalValue":"Total value",
+            "lblDamage":"Damage?",
+            "public_key":"Load number"
         }
     },
     "Users":{
@@ -71,5 +78,19 @@
         "btnUpdate":"Update users",
         "btnDelete":"Delete users",
         "btnGet":"Users list"
+    },
+    "Clients":{
+        "btnCreate":"Create clients",
+        "btnUpdate":"Update clients",
+        "btnDelete":"Delete clients",
+        "btnGet":"Clients list"
+    },
+    "Suppliers":{
+        "btnCreate":"Create suppliers",
+        "btnUpdate":"Update suppliers",
+        "btnDelete":"Delete suppliers",
+        "btnGet":"Suppliers list",
+        "alerSucces":"The supplier has been created successfully",
+        "alertError":"There was an error creating the provider, please try again later"
     }
 }

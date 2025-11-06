@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import type { Entry } from "../types/collections";
 import type { classifyProduct } from "../types/forms";
 
@@ -14,7 +15,10 @@ export type ClassifyActions =
   | { type: "change-country-product"; payload: { public_key: string; field: string; value: string } }
   | { type: "set-edit-data"; payload: { public_key: string } }
   | { type: "set-product-classify-data"; payload: { products: classifyProduct[] } }
+  | { type: "update-entry-financials"; payload: Partial<Entry> }
+  | { type:"change-damaage", payload : { e: ChangeEvent<HTMLInputElement>, productId:string} }
   | { type: "clear-all" };
+
 
 export type ClassifyState = {
   entrySelected: Entry;
@@ -35,6 +39,14 @@ export const ClassifyInitialState: ClassifyState = {
     id_client: "",
     created: "",
     updated: "",
+    subtotal:0,
+    packing_price:0,
+    is_reviewed:false,
+    is_classify:false,
+    other_price:0,
+    total:0,
+    total_limbs:0,
+    net_weight_total:0
   },
   products: [],
 };
@@ -77,6 +89,7 @@ export const ClassifyReducer = (
             item: "",
             limps: 0,
             edit: true,
+            damage:false,
           } as classifyProduct,
         ],
       };
@@ -194,6 +207,30 @@ export const ClassifyReducer = (
     // 🔄 Reset total
     case "clear-all":
       return { ...ClassifyInitialState };
+
+    case "update-entry-financials":
+      return {
+        ...state,
+        entrySelected: {
+          ...state.entrySelected,
+          ...action.payload,
+      },
+    };
+
+    case "change-damaage":
+      const { name, checked } = action.payload.e.target;
+      const   public_key = action.payload.productId
+      return{
+        ...state,
+        products: state.products.map((p) =>
+          p.public_key === public_key
+            ? {
+                ...p,
+                [name]:checked
+              }
+            : p
+        ),
+      }
 
     default:
       return state;

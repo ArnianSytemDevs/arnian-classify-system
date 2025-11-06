@@ -10,6 +10,7 @@ export type ProductForm = {
     serial_number:string | any;
     id_measurement:any | any;
     color:string | any;
+    traduction:string | any;
     weight:number | any;
     id_supplier:any | any;
     unit_price:any;
@@ -78,6 +79,7 @@ export type classifyProduct = {
     unit_price: any;
     unit_weight: any;
     tariff_fraction: any;
+    description:any;
     parts_number: any;
     item: any;
     limps: any;
@@ -86,4 +88,33 @@ export type classifyProduct = {
     synced?: boolean;
     syncError?: string | null;
     id_pocketbase?: string | null;
+    damage:boolean
+};
+
+// Asegúrate de que tu tipo tenga public_key
+export type ClientsForm = {
+    public_key: string;
+    name: string;
+    alias: string;
+    field: string;
+    rfc: string;
+    is_deleted: boolean;
+    id_status: any;
+    address: string;
+    postal_code: number;
+    email: string;
+    image: File[] | any;
+};
+
+export type SupplierForm = {
+    public_key: string;
+    name: string;
+    rfc: string;
+    vin: string;
+    address: string;
+    phone_number: string;
+    email: string;
+    alias: string;
+    postal_code: string;
+    is_deleted: boolean; 
 };
