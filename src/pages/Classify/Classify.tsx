@@ -91,8 +91,11 @@ export default function Classify() {
     /* 🟣 2️⃣ Cargar datos según entrada seleccionada */
     useEffect(() => {
     const entry = classifyState.entrySelected;
+    console.log("🚀 ~ Classify ~ entry:", entry)
     if (!entry?.id) {
-        navigate("/dashboard");
+        classifyDispatch({ type: "clear-all" })
+        entryDispatch({ type: 'clear-state' })
+        navigate('/dashboard')
         return;
     }
 
@@ -697,24 +700,24 @@ export default function Classify() {
                     </div>
 
                     {/* 📎 Archivos adjuntos */}
-                    {classifyState.entrySelected.file.length > 0 && (
+                    {Array.isArray(classifyState.entrySelected?.file) && classifyState.entrySelected.file.length > 0 && (
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-8">
-                        {classifyState.entrySelected.file.map((file: File) => (
+                            {classifyState.entrySelected.file.map((file: File) => (
                             <div
-                            key={file.name || file.toString()}
-                            className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
+                                key={file.name || file.toString()}
+                                className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
                             >
-                            <div
+                                <div
                                 className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-1"
                                 onClick={() =>
-                                window.open(pb.files.getURL(classifyState.entrySelected, file.toString()))
+                                    window.open(pb.files.getURL(classifyState.entrySelected, file.toString()))
                                 }
-                            >
+                                >
                                 {renderPreview(file)}
                                 <span className="mt-2 text-xs truncate w-24">{file.toString()}</span>
+                                </div>
                             </div>
-                            </div>
-                        ))}
+                            ))}
                         </div>
                     )}
 
@@ -859,14 +862,18 @@ export default function Classify() {
                             Salir
                         </button>
                     </UserPermissions>
-                    <UserPermissions permission="closeClassify" role={role} >
-                        <button
-                            onClick={()=>{ handleFinishEntry() }}
-                            className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
-                        >
-                            Finalizar entrada
-                        </button>
-                    </UserPermissions>
+                    {
+                        classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed? (
+                            <UserPermissions permission="closeClassify" role={role} >
+                                <button
+                                    onClick={()=>{ handleFinishEntry() }}
+                                    className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                                >
+                                    Finalizar entrada
+                                </button>
+                            </UserPermissions>
+                        ):(<></>)
+                    }
                 </div>
                 {/* 🧾 TABLA DE PRODUCTOS */}
                 <div className="bg-white dark:bg-slate-900 rounded-md p-4 shadow-md overflow-x-auto min-h-110">
@@ -877,7 +884,7 @@ export default function Classify() {
                         t("Classify.list.lblOptions"),
                         t("Classify.list.lblProduct"),
                         ...(
-                        ["classifier", "admin", "developer"].includes(role?.toLowerCase())
+                        ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase())
                             ? [
                                 t("Classify.list.lblLot"),
                                 t("Classify.list.lblBatch"),
@@ -898,7 +905,14 @@ export default function Classify() {
                         t("Classify.list.lblModel"),
                         t("Classify.list.lblNo_Series"),
                         t("Classify.list.lblUnit_measurement"),
-                        t("Classify.list.lblFractionMX"),
+                        ...(
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase())
+                            ? [
+                                t("Classify.list.lblFractionMX"),
+                                t("Classify.list.lblDesc"),
+                            ]
+                            : []
+                        ),
                         t("Classify.list.lblParty"),
                         t("Classify.list.lblItem"),
                         t("Classify.list.lblLumps"),
@@ -959,7 +973,7 @@ export default function Classify() {
 
                             {/* Campos editables */}
                             {
-                            ["classifier", "admin", "developer"].includes(role?.toLowerCase()) && (
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && (
                                 <td className={thBody}>
                                     <TextField
                                     variant="filled"
@@ -973,7 +987,7 @@ export default function Classify() {
                                 </td>
                             )}
                             {
-                            ["classifier", "admin", "developer"].includes(role?.toLowerCase()) && (
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && (
                                 <td className={thBody}>
                                     <TextField
                                     variant="filled"
@@ -1169,20 +1183,39 @@ export default function Classify() {
                                 )}
                             />
                             </td>
-                            <UserPermissions permission="classify" role={role} >
-                                <td className={thBody}>
-                                    <TextField
-                                    variant="filled"
-                                    disabled={!p.edit}
-                                    name="tariff_fraction"
-                                    type="text"
-                                    value={p.tariff_fraction}
-                                    sx={inputText}
-                                    label={t("Classify.list.lblFractionMX")}
-                                    onChange={(e) => handleChangeInput(e, p.public_key)}
-                                    />
-                                </td>
-                            </UserPermissions>
+                            {["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && ( 
+                                // <UserPermissions permission="classify" role={role} >
+                                    <td className={thBody}>
+                                        <TextField
+                                        variant="filled"
+                                        disabled={!p.edit}
+                                        name="tariff_fraction"
+                                        type="text"
+                                        value={p.tariff_fraction}
+                                        sx={inputText}
+                                        label={t("Classify.list.lblFractionMX")}
+                                        onChange={(e) => handleChangeInput(e, p.public_key)}
+                                        />
+                                    </td>
+                                // </UserPermissions>
+                            )}
+                            {["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && ( 
+                                // <UserPermissions permission="classify" role={role} >
+                                    <td className={thBody}>
+                                        <TextField
+                                        variant="filled"
+                                        disabled={!p.edit}
+                                        name="description"
+                                        type="text"
+                                        value={p.description}
+                                        multiline
+                                        sx={inputText}
+                                        label={t("Classify.list.lblDesc")}
+                                        onChange={(e) => handleChangeInput(e, p.public_key)}
+                                        />
+                                    </td>
+                                // </UserPermissions>
+                            )}
                             <td className={thBody}>
                                 <TextField
                                 variant="filled"

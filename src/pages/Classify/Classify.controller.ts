@@ -213,103 +213,102 @@ export class ClassifyController {
         return formatted;
     }
     
-    public static async saveProductClassification( entry: Entry, product: classifyProduct, role: string) {
+    public static async saveProductClassification(entry: Entry, product: classifyProduct, role: string) {
         try {
-        // 1️⃣ Verificar que haya una entrada seleccionada
-        if (!entry?.id) throw new Error("No hay entrada activa.");
+            // 1️⃣ Verificar que haya una entrada seleccionada
+            if (!entry?.id) throw new Error("No hay entrada activa.");
 
-        // 2️⃣ Verificar si ya existe un Entry_product vinculado
-        let entryProduct = await pb
+            // 2️⃣ Verificar si ya existe un Entry_product vinculado
+            let entryProduct = await pb
             .collection("Entry_products")
             .getFirstListItem(
-            `id_entry="${entry.id}" && id_product="${product.id_product}"`,
-            { requestKey: null }
+                `id_entry="${entry.id}" && id_product="${product.id_product}"`,
+                { requestKey: null }
             )
             .catch(() => null);
 
-        // 3️⃣ Si no existe, crear uno nuevo
-        if (!entryProduct) {
+            // 3️⃣ Crear o actualizar Entry_product (según el rol)
+            if (!entryProduct) {
             const newEntryProduct = await pb.collection("Entry_products").create({
-            id_entry: entry.id,
-            id_product: product.id_product,
-            ...(role === "Classifier" && {
+                id_entry: entry.id,
+                id_product: product.id_product,
+                ...(role === "Classifier" && {
                 is_damage: Boolean(product.damage),
                 lote: product.lote || "",
                 batch: product.batch || "",
-            }),
+                }),
             });
             entryProduct = newEntryProduct;
-        } else if (role === "Classifier") {
-            // Actualizar campos si es clasificador (los revisores no deben tocarlos)
+            } else if (role === "Classifier") {
             await pb.collection("Entry_products").update(entryProduct.id, {
-            is_damage: Boolean(product.damage),
-            lote: product.lote || "",
-            batch: product.batch || "",
+                is_damage: Boolean(product.damage),
+                lote: product.lote || "",
+                batch: product.batch || "",
             });
-        }
+            }
 
-        // 4️⃣ Crear / actualizar la clasificación
-        const classificationData = {
+            // 4️⃣ Construcción del cuerpo de clasificación
+            const classificationData = {
             public_key: product.public_key,
             id_entry: entry.id,
             id_product: product.id_product,
-            tariff_fraction: Number(product.tariff_fraction),
-            lumps: Number(product.limps),
+            tariff_fraction: Number(product.tariff_fraction) || 0,
+            lumps: Number(product.limps) || 0,
             field: 0,
-            item: String(product.item),
+            item: String(product.item || ""),
+            description: String(product.description || ""), // 🆕 Nuevo campo editable por el clasificador
             origin_country:
-            typeof product.origin_country === "object"
+                typeof product.origin_country === "object"
                 ? JSON.stringify(product.origin_country)
                 : product.origin_country || "",
             origin_seller:
-            typeof product.seller_country === "object"
+                typeof product.seller_country === "object"
                 ? JSON.stringify(product.seller_country)
                 : product.seller_country || "",
-            quantity: Number(product.quantity),
-            net_weight: Number(product.net_weight),
-            partys: Number(product.parts_number),
+            quantity: Number(product.quantity) || 0,
+            net_weight: Number(product.net_weight) || 0,
+            partys: Number(product.parts_number) || 0,
             unit_type:
-            typeof product.type_weight === "object"
+                typeof product.type_weight === "object"
                 ? product.type_weight.id
-                : product.type_weight,
+                : product.type_weight || "",
             unit_weight:
-            typeof product.unit_weight === "object"
+                typeof product.unit_weight === "object"
                 ? product.unit_weight.id
-                : product.unit_weight,
+                : product.unit_weight || "",
             deprected: false,
-        };
+            };
 
-        const existingClassification = await pb
-            .collection("Classification")
-            .getFirstListItem(`public_key="${product.public_key}"`, {
-            requestKey: null,
-            })
+            // 5️⃣ Crear o actualizar registro en Classification
+            const existingClassification = await pb
+            .collection("Classiffication")
+            .getFirstListItem(`public_key="${product.public_key}"`, { requestKey: null })
             .catch(() => null);
 
-        let classificationRecord;
+            let classificationRecord;
 
-        if (existingClassification) {
+            if (existingClassification) {
             classificationRecord = await pb
-            .collection("Classiffication")
-            .update(existingClassification.id, classificationData);
-        } else {
+                .collection("Classiffication")
+                .update(existingClassification.id, classificationData);
+            } else {
             classificationRecord = await pb
-            .collection("Classiffication")
-            .create(classificationData);
-        }
+                .collection("Classiffication")
+                .create(classificationData);
+            }
 
-        // 5️⃣ Retornar resultado unificado
-        return {
+            // 6️⃣ Retornar resultado unificado
+            return {
             status: "success",
             entryProductId: entryProduct.id,
             classificationId: classificationRecord.id,
-        };
+            };
         } catch (error: any) {
-        console.error("❌ Error al guardar clasificación individual:", error);
-        return {
+            console.error("❌ Error al guardar clasificación individual:", error);
+            return {
             status: "error",
             message: error.message || "Error al guardar producto",
-        };
+            };
         }
     }
 
@@ -385,6 +384,7 @@ export class ClassifyController {
                                 : null,
 
                             tariff_fraction: classification?.tariff_fraction || 0,
+                            description: product.description || "",
                             parts_number: classification?.partys || 0,
                             item: classification?.item || "",
                             limps: classification?.lumps || 0,

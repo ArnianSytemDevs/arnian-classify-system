@@ -66,6 +66,7 @@
             "lblFractionMX":"Tariff fraction",
             "lblParty":"Party",
             "lblItem":"Item",
+            "lblDesc":"Description",
             "lblLumps":"Lumps",
             "lblTotalValue":"Total value",
             "lblDamage":"Damage?",

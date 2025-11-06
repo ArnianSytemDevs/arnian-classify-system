@@ -79,6 +79,7 @@ export type classifyProduct = {
     unit_price: any;
     unit_weight: any;
     tariff_fraction: any;
+    description:any;
     parts_number: any;
     item: any;
     limps: any;

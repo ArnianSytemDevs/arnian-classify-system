@@ -69,6 +69,7 @@
             "lblLumps":"Bultos",
             "lblTotalValue":"Valor total",
             "lblDamage":"Dañado?",
+            "lblDesc":"Descripcion",
             "public_key":"Numero de carga"
         }
     },
