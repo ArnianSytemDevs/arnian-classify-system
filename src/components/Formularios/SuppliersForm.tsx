@@ -1,7 +1,7 @@
     import React from "react";
     import { Modal, TextField } from "@mui/material";
-    import { IoMdCloseCircleOutline } from "react-icons/io";
-    import { TiMinusOutline } from "react-icons/ti";
+    // import { IoMdCloseCircleOutline } from "react-icons/io";
+    // import { TiMinusOutline } from "react-icons/ti";
     import { useTranslation } from "react-i18next";
     import { SuppliersFormController } from "./SuppliersForm.controller";
     import { useClassifyContext } from "../../hooks/useClassifyContext";
@@ -104,23 +104,23 @@ import UserPermissions from "../../hooks/usePremission";
             "
         >
             {/* HEADER */}
-            <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-            <button
-                onClick={() => setOpenModal(false)}
-                className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-            >
-                <IoMdCloseCircleOutline />
-            </button>
-            <button
-                onClick={() => setOpenModal(false)}
-                className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
-            >
-                <TiMinusOutline />
-            </button>
-            <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-                {mode === "edit" ? t("suppliers.edit") : t("suppliers.create")}
-            </p>
-            </div>
+            {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
+                <button
+                    onClick={() => setOpenModal(false)}
+                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
+                >
+                    <IoMdCloseCircleOutline />
+                </button>
+                <button
+                    onClick={() => setOpenModal(false)}
+                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
+                >
+                    <TiMinusOutline />
+                </button>
+                <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
+                    {mode === "edit" ? t("suppliers.edit") : t("suppliers.create")}
+                </p>
+            </div> */}
 
             {/* BODY */}
             <div className="overflow-auto p-5">
@@ -249,7 +249,7 @@ import UserPermissions from "../../hooks/usePremission";
                 Cancelar
             </button>
 
-            <UserPermissions permission="save" role={role}> 
+            <UserPermissions permission="saveSupplier" role={role}> 
                 <button
                     disabled={!isValid()}
                     type="submit"

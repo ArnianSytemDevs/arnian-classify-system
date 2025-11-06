@@ -14,7 +14,6 @@ import Swal from "sweetalert2";
 import { ToastContainer, toast } from "react-toastify";
 import { MdEditSquare } from "react-icons/md";
 import type { classifyProduct } from "../../types/forms";
-import MenuComponent from "../../components/Menu/MenuComponent";
 import { CgSandClock } from "react-icons/cg";
 import { useNavigate } from "react-router";
 import { usePreventNavigation } from "../../hooks/ReturnAlert";
@@ -204,12 +203,24 @@ export default function Classify() {
     };
     
     const handleChangeSave = async (product: classifyProduct) => {
-        // 🛑 Si el producto no está en modo edición, salir inmediatamente
-        if (!product.edit) return;
 
-        const isReviewer = role === "Reviewer";
+    const isReviewer = role === "Reviewer";
+    const isClassifier = role === "Classifier";
 
-        // 🧩 Lista de campos requeridos según el rol
+    // 🧠 Si no está en modo edición, pero el clasificador está continuando la revisión, permitir continuar
+    const canSaveWithoutEdit =
+        isClassifier &&
+        (product.quantity ||
+            product.net_weight ||
+            product.unit_weight ||
+            product.type_weight);
+
+        if (!product.edit && !canSaveWithoutEdit) {
+            console.log("⛔ Producto no editable en este momento");
+            return;
+        }
+
+        // 🧩 Lista de campos requeridos según rol
         const requiredFields: (keyof classifyProduct)[] = isReviewer
             ? [
                 "name",
@@ -219,15 +230,12 @@ export default function Classify() {
                 "net_weight",
                 "type_weight",
                 "unit_weight",
-                "tariff_fraction",
                 "parts_number",
                 "item",
                 "limps",
             ]
             : [
                 "name",
-                "lote",
-                "batch",
                 "quantity",
                 "seller_country",
                 "weight",
@@ -251,7 +259,6 @@ export default function Classify() {
             );
         });
 
-        // ⚠️ Mostrar alerta si faltan campos (solo si está en modo edición)
         if (missingFields.length > 0) {
             const fieldNames = missingFields.join(", ");
             await Swal.fire({
@@ -387,7 +394,7 @@ export default function Classify() {
             if (lower.endsWith(".pdf")) {
             return (
                 <div className="flex flex-col items-center text-red-500">
-                📄 <span className="text-xs truncate w-20">{file}</span>
+                📄 <span className="text-xs truncate w-10">{file}</span>
                 </div>
             );
             }
@@ -395,14 +402,14 @@ export default function Classify() {
             if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
             return (
                 <div className="flex flex-col items-center text-blue-500">
-                📝 <span className="text-xs truncate w-20">{file}</span>
+                📝 <span className="text-xs truncate w-10">{file}</span>
                 </div>
             );
             }
     
             return (
             <div className="flex flex-col items-center text-gray-500">
-                📦 <span className="text-xs truncate w-20">{file}</span>
+                📦 <span className="text-xs truncate w-10">{file}</span>
             </div>
             );
         }else{
@@ -649,199 +656,176 @@ export default function Classify() {
 
     return (
         <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
-            <MenuComponent />
             <div className="text-center bg-cyan-50/50 dark:bg-slate-800 p-5 min-h-screen overflow-x-auto">
                 <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 mb-8">
-                {/* 🖼️ Logo */}
-                <div className="flex justify-center mb-6">
-                    <img src={ArnLogo} className="w-[150px]" alt="Arnian Logo" />
-                </div>
+                    {/* 🖼️ Logo */}
+                    <div className="flex justify-center mb-6">
+                        <img src={ArnLogo} alt="Arnian Logo" className="w-[150px]" />
+                    </div>
 
-                {/* 📄 Encabezado de entrada */}
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                    Datos generales de la entrada
-                </h3>
+                    {/* 📄 Encabezado de entrada */}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                        Datos generales de la entrada
+                    </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.pkey")}
-                    value={classifyState.entrySelected.public_key}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label="TAX ID"
-                    value={classifyState.entrySelected.id_tax}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.invoice")}
-                    value={classifyState.entrySelected.invoice_number}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.supplier")}
-                    value={suppliers.find((s) => s.id === classifyState.entrySelected.id_supplier)?.name || ""}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.client")}
-                    value={clients.find((c) => c.id === classifyState.entrySelected.id_client)?.name || ""}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.created")}
-                    value={classifyState.entrySelected.created}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                </div>
-                {classifyState.entrySelected.file.length > 0 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                        {classifyState.entrySelected.file.map((file: File) => (
-                        <div
-                            key={file.name || file.toString()  }
-                            className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
-                        >
-
-                            <div
-                            className="w-[100%] h-[100%] flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-3"
-                            onClick={() => window.open( pb.files.getURL(classifyState.entrySelected, file.toString()))}
-                            >
-                            {renderPreview(file)}
-                            <span className="mt-2 text-xs truncate w-24">{ file.toString() }</span>
-                            </div>
-                        </div>
+                    {/* 🧾 Campos generales */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {[
+                        { label: t("Entrys.form.pkey"), value: classifyState.entrySelected.public_key },
+                        { label: "TAX ID", value: classifyState.entrySelected.id_tax },
+                        { label: t("Entrys.form.invoice"), value: classifyState.entrySelected.invoice_number },
+                        {
+                            label: t("Entrys.form.supplier"),
+                            value: suppliers.find((s) => s.id === classifyState.entrySelected.id_supplier)?.name || "",
+                        },
+                        {
+                            label: t("Entrys.form.client"),
+                            value: clients.find((c) => c.id === classifyState.entrySelected.id_client)?.name || "",
+                        },
+                        { label: t("Entrys.form.created"), value: classifyState.entrySelected.created },
+                        ].map(({ label, value }, i) => (
+                        <TextField
+                            key={i}
+                            variant="filled"
+                            sx={inputText}
+                            label={label}
+                            value={value}
+                            InputProps={{ readOnly: true }}
+                            fullWidth
+                        />
                         ))}
                     </div>
-                )}
 
-                {/* 💰 Totales financieros */}
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                    Totales financieros
-                </h3>
+                    {/* 📎 Archivos adjuntos */}
+                    {classifyState.entrySelected.file.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-8">
+                        {classifyState.entrySelected.file.map((file: File) => (
+                            <div
+                            key={file.name || file.toString()}
+                            className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
+                            >
+                            <div
+                                className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-1"
+                                onClick={() =>
+                                window.open(pb.files.getURL(classifyState.entrySelected, file.toString()))
+                                }
+                            >
+                                {renderPreview(file)}
+                                <span className="mt-2 text-xs truncate w-24">{file.toString()}</span>
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    )}
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <TextField
-                    variant="filled"
-                    label="Subtotal"
-                    value={classifyState.entrySelected.subtotal?.toFixed(2) || "0.00"}
-                    InputProps={{ readOnly: true }}
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Precio embalaje"
-                    type="number"
-                    value={classifyState.entrySelected.packing_price ?? 0}
-                    onChange={(e) =>
-                        classifyDispatch({
-                        type: "update-entry-financials",
-                        payload: { packing_price: Number(e.target.value) },
-                        })
-                    }
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Otros costos"
-                    type="number"
-                    value={classifyState.entrySelected.other_price ?? 0}
-                    onChange={(e) =>
-                        classifyDispatch({
-                        type: "update-entry-financials",
-                        payload: { other_price: Number(e.target.value) },
-                        })
-                    }
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Total general"
-                    value={(
-                        (classifyState.entrySelected.subtotal ?? 0) +
-                        (classifyState.entrySelected.packing_price ?? 0) +
-                        (classifyState.entrySelected.other_price ?? 0)
-                    ).toFixed(2)}
-                    InputProps={{ readOnly: true }}
-                    sx={inputText}
-                    fullWidth
-                    />
+                    {/* 💰 Totales financieros */}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                        Totales financieros
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {[
+                        {
+                            label: "Subtotal",
+                            value: classifyState.entrySelected.subtotal?.toFixed(2) || "0.00",
+                            readOnly: true,
+                        },
+                        {
+                            label: "Precio embalaje",
+                            value: classifyState.entrySelected.packing_price ?? 0,
+                            onChange: (e: any) =>
+                            classifyDispatch({
+                                type: "update-entry-financials",
+                                payload: { packing_price: Number(e.target.value) },
+                            }),
+                        },
+                        {
+                            label: "Otros costos",
+                            value: classifyState.entrySelected.other_price ?? 0,
+                            onChange: (e: any) =>
+                            classifyDispatch({
+                                type: "update-entry-financials",
+                                payload: { other_price: Number(e.target.value) },
+                            }),
+                        },
+                        {
+                            label: "Total general",
+                            value: (
+                            (classifyState.entrySelected.subtotal ?? 0) +
+                            (classifyState.entrySelected.packing_price ?? 0) +
+                            (classifyState.entrySelected.other_price ?? 0)
+                            ).toFixed(2),
+                            readOnly: true,
+                        },
+                        ].map(({ label, value, onChange, readOnly }, i) => (
+                        <TextField
+                            key={i}
+                            variant="filled"
+                            type={onChange ? "number" : "text"}
+                            label={label}
+                            value={value}
+                            onChange={onChange}
+                            InputProps={{ readOnly: readOnly ?? false }}
+                            sx={inputText}
+                            fullWidth
+                        />
+                        ))}
+                    </div>
                 </div>
-                </div>
-
 
                 <hr className="my-4" />
-
                 {/* 🔍 BUSCADOR GLOBAL DE PRODUCTOS */}
-                <div className="flex justify-center mb-6">
-                    <Autocomplete
-                    disablePortal
-                    disabled={isAvaibleToEdit()}
-                    sx={{ width: 500 }}
-                    options={products}
-                    inputValue={inputProduct}
-                    getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
-                    onInputChange={(_, value) => setInputProduct(value)}
-                    onChange={(_, value) => handleAddProduct(value)}
-                    renderOption={(props, option) => (
-                        <li
-                        {...props}
-                        key={option.id}
-                        className="
-                            flex items-center gap-4 w-full px-4 py-3
-                            rounded-lg border border-gray-200
-                            bg-white
-                            hover:bg-gray-100 dark:hover:bg-slate-700
-                            dark:hover:text-gray-200
-                            hover:shadow-md transition-all duration-200 cursor-pointer
-                        "
-                        >
-                        {/* 🖼️ Imagen */}
-                        <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
-                            {renderImage(option.files, option)}
-                        </div>
+                <UserPermissions permission="addProduct" role={role}>
+                    <div className="flex justify-center mb-6">
+                        <Autocomplete
+                        disablePortal
+                        disabled={isAvaibleToEdit()}
+                        sx={{ width: 500 }}
+                        options={products}
+                        inputValue={inputProduct}
+                        getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
+                        onInputChange={(_, value) => setInputProduct(value)}
+                        onChange={(_, value) => handleAddProduct(value)}
+                        renderOption={(props, option) => (
+                            <li
+                            {...props}
+                            key={option.id}
+                            className="
+                                flex items-center gap-4 w-full px-4 py-3
+                                rounded-lg border border-gray-200
+                                bg-white
+                                hover:bg-gray-100 dark:hover:bg-slate-700
+                                dark:hover:text-gray-200
+                                hover:shadow-md transition-all duration-200 cursor-pointer
+                            "
+                            >
+                            {/* 🖼️ Imagen */}
+                            <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                                {renderImage(option.files, option)}
+                            </div>
 
-                        {/* 🧾 Info */}
-                        <div className="flex flex-col flex-grow min-w-0">
-                            <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
-                            Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
-                            </span>
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                            Precio: ${Number(option.unit_price || 0).toFixed(2)}
-                            </span>
-                        </div>
-                        </li>
-                    )}
-                    renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
-                    />
-                    <button 
-                        onClick={()=>{ handleCreateProduct() }}
-                        className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
-                    > <FaPlusSquare /> </button>
+                            {/* 🧾 Info */}
+                            <div className="flex flex-col flex-grow min-w-0">
+                                <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
+                                Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
+                                </span>
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                                Precio: ${Number(option.unit_price || 0).toFixed(2)}
+                                </span>
+                            </div>
+                            </li>
+                        )}
+                        renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
+                        />
+                        <button 
+                            onClick={()=>{ handleCreateProduct() }}
+                            className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
+                        > <FaPlusSquare /> </button>
 
-                </div>
+                    </div>
+                </UserPermissions>
                 <div className="mt-6 flex gap-5">
                     <UserPermissions permission="saveReview" role={role} >
                         {
@@ -892,12 +876,14 @@ export default function Classify() {
                         {[
                         t("Classify.list.lblOptions"),
                         t("Classify.list.lblProduct"),
-                        ...(role === "classifier" || role === "Admin" || role === "Developer"
+                        ...(
+                        ["classifier", "admin", "developer"].includes(role?.toLowerCase())
                             ? [
                                 t("Classify.list.lblLot"),
                                 t("Classify.list.lblBatch"),
                             ]
-                            : []),
+                            : []
+                        ),
                         t("Classify.list.lblQuantity"),
                         t("Classify.list.lblUnit_price"),
                         t("Classify.list.lblTotalValue"),
@@ -973,7 +959,7 @@ export default function Classify() {
 
                             {/* Campos editables */}
                             {
-                            role === "classifier" || role === "Admin" || role === "Developer"?(
+                            ["classifier", "admin", "developer"].includes(role?.toLowerCase()) && (
                                 <td className={thBody}>
                                     <TextField
                                     variant="filled"
@@ -985,9 +971,9 @@ export default function Classify() {
                                     onChange={(e) => handleChangeInput(e, p.public_key)}
                                     />
                                 </td>
-                            ):("")}
+                            )}
                             {
-                            role === "classifier" || role === "Admin" || role === "Developer"?(
+                            ["classifier", "admin", "developer"].includes(role?.toLowerCase()) && (
                                 <td className={thBody}>
                                     <TextField
                                     variant="filled"
@@ -999,7 +985,7 @@ export default function Classify() {
                                     onChange={(e) => handleChangeInput(e, p.public_key)}
                                     />
                                 </td>
-                            ):("")}
+                            )}                        
                             <td className={thBody}>
                                 <TextField
                                 variant="filled"

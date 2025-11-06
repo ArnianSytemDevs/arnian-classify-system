@@ -91,7 +91,7 @@ export default function Products() {
                 </UserPermissions>
 
                 <br />
-                <UserPermissions permission='esitEntry' role={role} >
+                <UserPermissions permission='editEntry' role={role} >
                     <button
                         disabled={
                             entryState.entryList.length > 1 ||

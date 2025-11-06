@@ -132,14 +132,15 @@ export class ClassifyController {
                 is_deleted: false,
             };
 
-            // 🔹 Ajustar según el rol
-            if (role === "Reviewer") {
-                baseFilters.is_reviwed = false;
-                // En revisión, aún no clasificados
-                // baseFilters.is_classify = false; // si deseas incluirlo aquí
-            } else if (role === "Classifier") {
+            // // 🔹 Ajustar según el rol
+            // if (role === "Reviewer") {
+            //     baseFilters.is_reviwed = false;
+            // En revisión, aún no clasificados
+             // baseFilters.is_classify = false; // si deseas incluirlo aquí
+            //} else 
+            if (role === "Classifier") {
                 baseFilters.is_reviwed = true;
-                baseFilters.is_classify = false;
+                // baseFilters.is_classify = false;
             }
 
             // 🔹 Agregar el nombre si se proporciona
@@ -210,6 +211,106 @@ export class ClassifyController {
         }
 
         return formatted;
+    }
+    
+    public static async saveProductClassification( entry: Entry, product: classifyProduct, role: string) {
+        try {
+        // 1️⃣ Verificar que haya una entrada seleccionada
+        if (!entry?.id) throw new Error("No hay entrada activa.");
+
+        // 2️⃣ Verificar si ya existe un Entry_product vinculado
+        let entryProduct = await pb
+            .collection("Entry_products")
+            .getFirstListItem(
+            `id_entry="${entry.id}" && id_product="${product.id_product}"`,
+            { requestKey: null }
+            )
+            .catch(() => null);
+
+        // 3️⃣ Si no existe, crear uno nuevo
+        if (!entryProduct) {
+            const newEntryProduct = await pb.collection("Entry_products").create({
+            id_entry: entry.id,
+            id_product: product.id_product,
+            ...(role === "Classifier" && {
+                is_damage: Boolean(product.damage),
+                lote: product.lote || "",
+                batch: product.batch || "",
+            }),
+            });
+            entryProduct = newEntryProduct;
+        } else if (role === "Classifier") {
+            // Actualizar campos si es clasificador (los revisores no deben tocarlos)
+            await pb.collection("Entry_products").update(entryProduct.id, {
+            is_damage: Boolean(product.damage),
+            lote: product.lote || "",
+            batch: product.batch || "",
+            });
+        }
+
+        // 4️⃣ Crear / actualizar la clasificación
+        const classificationData = {
+            public_key: product.public_key,
+            id_entry: entry.id,
+            id_product: product.id_product,
+            tariff_fraction: Number(product.tariff_fraction),
+            lumps: Number(product.limps),
+            field: 0,
+            item: String(product.item),
+            origin_country:
+            typeof product.origin_country === "object"
+                ? JSON.stringify(product.origin_country)
+                : product.origin_country || "",
+            origin_seller:
+            typeof product.seller_country === "object"
+                ? JSON.stringify(product.seller_country)
+                : product.seller_country || "",
+            quantity: Number(product.quantity),
+            net_weight: Number(product.net_weight),
+            partys: Number(product.parts_number),
+            unit_type:
+            typeof product.type_weight === "object"
+                ? product.type_weight.id
+                : product.type_weight,
+            unit_weight:
+            typeof product.unit_weight === "object"
+                ? product.unit_weight.id
+                : product.unit_weight,
+            deprected: false,
+        };
+
+        const existingClassification = await pb
+            .collection("Classification")
+            .getFirstListItem(`public_key="${product.public_key}"`, {
+            requestKey: null,
+            })
+            .catch(() => null);
+
+        let classificationRecord;
+
+        if (existingClassification) {
+            classificationRecord = await pb
+            .collection("Classiffication")
+            .update(existingClassification.id, classificationData);
+        } else {
+            classificationRecord = await pb
+            .collection("Classiffication")
+            .create(classificationData);
+        }
+
+        // 5️⃣ Retornar resultado unificado
+        return {
+            status: "success",
+            entryProductId: entryProduct.id,
+            classificationId: classificationRecord.id,
+        };
+        } catch (error: any) {
+        console.error("❌ Error al guardar clasificación individual:", error);
+        return {
+            status: "error",
+            message: error.message || "Error al guardar producto",
+        };
+        }
     }
 
     public static async getClassifyByEntry(idEntry: string): Promise<classifyProduct[]> {
@@ -333,7 +434,15 @@ export class ClassifyController {
                 return { status: "warning", message: "La entrada ya fue revisada previamente." };
             }
 
-            // 3️⃣ Obtener lista de estatus y encontrar el de "In_classify"
+            // 3️⃣ Verificar si hay productos asignados
+            if (!products || products.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar la revisión sin haber asignado productos a la entrada.",
+                };
+            }
+
+            // 4️⃣ Obtener lista de estatus y encontrar el de "In_classify"
             const statusList: any = await getStatusList();
             const findStatus = statusList.items?.find((st: any) => st.name === "In_classify");
 
@@ -341,38 +450,40 @@ export class ClassifyController {
                 return { status: "error", message: "No se encontró el estado 'In_classify' en la base de datos." };
             }
 
-            // 4️⃣ Actualizar la entrada con el nuevo estatus y marcarla como revisada
+            // 5️⃣ Actualizar la entrada con el nuevo estatus y marcarla como revisada
             await pb.collection("Entrys").update(entryId, {
                 is_reviewed: true,
                 id_status: findStatus.id,
             });
 
-            // 5️⃣ Obtener todos los IDs de los productos relacionados
+            // 6️⃣ Obtener todos los IDs de productos relacionados
             const productIds = products
                 .filter((p) => p.id_product)
                 .map((p) => p.id_product);
 
             if (!productIds.length) {
-                console.warn("⚠️ No se encontraron productos válidos para actualizar.");
-            } else {
-                // 6️⃣ Actualizar cada producto de forma secuencial o paralela
-                await Promise.allSettled(
-                    productIds.map(async (productId) => {
-                        try {
-                            await pb.collection("Products").update(productId, { is_reviewed: true });
-                        } catch (err) {
-                            console.error(`❌ Error actualizando producto ${productId}:`, err);
-                        }
-                    })
-                );
+                return {
+                    status: "warning",
+                    message: "No se encontraron productos válidos para marcar como revisados.",
+                };
             }
 
-            // 7️⃣ Respuesta exitosa
+            // 7️⃣ Actualizar productos en paralelo
+            await Promise.allSettled(
+                productIds.map(async (productId) => {
+                    try {
+                        await pb.collection("Products").update(productId, { is_reviewed: true });
+                    } catch (err) {
+                        console.error(`❌ Error actualizando producto ${productId}:`, err);
+                    }
+                })
+            );
+
+            // 8️⃣ Respuesta exitosa
             return {
                 status: "success",
                 message: "✅ Revisión finalizada correctamente. Entrada y productos marcados como revisados.",
             };
-
         } catch (error: any) {
             console.error("❌ Error al finalizar revisión:", error);
             return {
@@ -391,7 +502,7 @@ export class ClassifyController {
                 return { status: "error", message: "Entrada no encontrada." };
             }
 
-            // 2️⃣ Validar que haya sido revisada
+            // 2️⃣ Validar que haya sido revisada previamente
             if (!entry.is_reviewed) {
                 return {
                     status: "warning",
@@ -404,7 +515,36 @@ export class ClassifyController {
                 return { status: "warning", message: "La entrada ya fue clasificada previamente." };
             }
 
-            // 4️⃣ Obtener lista de estatus y buscar el estado "Finished"
+            // 4️⃣ Validar que haya productos asignados
+            if (!products || products.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar la clasificación sin productos asignados.",
+                };
+            }
+
+            // 5️⃣ Validar que todos los productos tengan fracción, lote y batch
+            const invalidProducts = products.filter(
+                (p) =>
+                    !p.tariff_fraction ||
+                    p.tariff_fraction === 0 ||
+                    !p.lote ||
+                    p.lote.trim() === "" ||
+                    !p.batch ||
+                    p.batch.trim() === ""
+            );
+
+            if (invalidProducts.length > 0) {
+                const invalidNames = invalidProducts.map((p) => `• ${p.name || "Producto sin nombre"}`).join("<br>");
+                return {
+                    status: "warning",
+                    message: `Los siguientes productos tienen información incompleta:
+                            ${invalidNames}.
+                            Asegúrate de llenar fracción arancelaria, lote y batch antes de finalizar.`,
+                };
+            }
+
+            // 6️⃣ Obtener lista de estatus y buscar el estado "Active"
             const statusList: any = await getStatusList();
             const findStatus = statusList.items?.find((st: any) => st.name === "Active");
 
@@ -415,21 +555,18 @@ export class ClassifyController {
                 };
             }
 
-            // 5️⃣ Actualizar la entrada: marcar como clasificada y cambiar el estado
+            // 7️⃣ Actualizar la entrada: marcar como clasificada y cambiar el estado
             await pb.collection("Entrys").update(entryId, {
                 is_classify: true,
                 id_status: findStatus.id,
             });
 
-            // 6️⃣ Obtener todos los IDs de los productos relacionados
+            // 8️⃣ Actualizar todos los productos relacionados
             const productIds = products
                 .filter((p) => p.id_product)
                 .map((p) => p.id_product);
 
-            if (!productIds.length) {
-                console.warn("⚠️ No se encontraron productos válidos para actualizar.");
-            } else {
-                // 7️⃣ Actualizar cada producto en paralelo
+            if (productIds.length) {
                 await Promise.allSettled(
                     productIds.map(async (productId) => {
                         try {
@@ -439,120 +576,21 @@ export class ClassifyController {
                         }
                     })
                 );
+            } else {
+                console.warn("⚠️ No se encontraron productos válidos para actualizar.");
             }
 
-            // 8️⃣ Respuesta exitosa
+            // 9️⃣ Respuesta exitosa
             return {
                 status: "success",
                 message: "✅ Clasificación finalizada correctamente. Entrada y productos actualizados.",
             };
-
         } catch (error: any) {
             console.error("❌ Error al finalizar clasificación:", error);
             return {
                 status: "error",
                 message: error.message || "Error desconocido al finalizar clasificación.",
             };
-        }
-    }
-
-    public static async saveProductClassification( entry: Entry, product: classifyProduct, role: string) {
-        try {
-        // 1️⃣ Verificar que haya una entrada seleccionada
-        if (!entry?.id) throw new Error("No hay entrada activa.");
-
-        // 2️⃣ Verificar si ya existe un Entry_product vinculado
-        let entryProduct = await pb
-            .collection("Entry_products")
-            .getFirstListItem(
-            `id_entry="${entry.id}" && id_product="${product.id_product}"`,
-            { requestKey: null }
-            )
-            .catch(() => null);
-
-        // 3️⃣ Si no existe, crear uno nuevo
-        if (!entryProduct) {
-            const newEntryProduct = await pb.collection("Entry_products").create({
-            id_entry: entry.id,
-            id_product: product.id_product,
-            ...(role === "Classifier" && {
-                is_damage: Boolean(product.damage),
-                lote: product.lote || "",
-                batch: product.batch || "",
-            }),
-            });
-            entryProduct = newEntryProduct;
-        } else if (role === "Classifier") {
-            // Actualizar campos si es clasificador (los revisores no deben tocarlos)
-            await pb.collection("Entry_products").update(entryProduct.id, {
-            is_damage: Boolean(product.damage),
-            lote: product.lote || "",
-            batch: product.batch || "",
-            });
-        }
-
-        // 4️⃣ Crear / actualizar la clasificación
-        const classificationData = {
-            public_key: product.public_key,
-            id_entry: entry.id,
-            id_product: product.id_product,
-            tariff_fraction: Number(product.tariff_fraction),
-            lumps: Number(product.limps),
-            field: 0,
-            item: String(product.item),
-            origin_country:
-            typeof product.origin_country === "object"
-                ? JSON.stringify(product.origin_country)
-                : product.origin_country || "",
-            origin_seller:
-            typeof product.seller_country === "object"
-                ? JSON.stringify(product.seller_country)
-                : product.seller_country || "",
-            quantity: Number(product.quantity),
-            net_weight: Number(product.net_weight),
-            partys: Number(product.parts_number),
-            unit_type:
-            typeof product.type_weight === "object"
-                ? product.type_weight.id
-                : product.type_weight,
-            unit_weight:
-            typeof product.unit_weight === "object"
-                ? product.unit_weight.id
-                : product.unit_weight,
-            deprected: false,
-        };
-
-        const existingClassification = await pb
-            .collection("Classification")
-            .getFirstListItem(`public_key="${product.public_key}"`, {
-            requestKey: null,
-            })
-            .catch(() => null);
-
-        let classificationRecord;
-
-        if (existingClassification) {
-            classificationRecord = await pb
-            .collection("Classiffication")
-            .update(existingClassification.id, classificationData);
-        } else {
-            classificationRecord = await pb
-            .collection("Classiffication")
-            .create(classificationData);
-        }
-
-        // 5️⃣ Retornar resultado unificado
-        return {
-            status: "success",
-            entryProductId: entryProduct.id,
-            classificationId: classificationRecord.id,
-        };
-        } catch (error: any) {
-        console.error("❌ Error al guardar clasificación individual:", error);
-        return {
-            status: "error",
-            message: error.message || "Error al guardar producto",
-        };
         }
     }
 
@@ -565,18 +603,39 @@ export class ClassifyController {
                 return { status: "error", message: "Entrada no encontrada." };
             }
 
-            // 2️⃣ Verificar si ya tiene el estatus "Finished"
+            // 2️⃣ Obtener lista de estatus y validar que existan los relevantes
             const statusList: any = await getStatusList();
             const finishedStatus = statusList.items?.find((st: any) => st.name === "Finished");
+            const activeStatus = statusList.items?.find((st: any) => st.name === "Active");
 
-            if (!finishedStatus) {
+            if (!finishedStatus || !activeStatus) {
                 return {
                     status: "error",
-                    message: "No se encontró el estado 'Finished' en la base de datos.",
+                    message: "No se encontraron los estados 'Finished' o 'Active' en la base de datos.",
                 };
             }
 
-            // 3️⃣ Si ya está en estatus Finished, evitar actualizar de nuevo
+            // 3️⃣ Verificar que la entrada esté en estado "Active" antes de finalizar
+            if (entry.id_status !== activeStatus.id) {
+                return {
+                    status: "warning",
+                    message: "Solo se pueden finalizar entradas que estén en estado 'Active'.",
+                };
+            }
+
+            // 4️⃣ Verificar que la entrada tenga productos asignados
+            const assignedProducts = await pb.collection("Entry_products").getFullList({
+                filter: `id_entry.id = "${entryId}"`,
+            });
+
+            if (!assignedProducts || assignedProducts.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar una entrada sin productos asignados.",
+                };
+            }
+
+            // 5️⃣ Verificar si ya tiene el estatus 'Finished'
             if (entry.id_status === finishedStatus.id) {
                 return {
                     status: "warning",
@@ -584,17 +643,16 @@ export class ClassifyController {
                 };
             }
 
-            // 4️⃣ Actualizar el estado de la entrada a Finished
+            // 6️⃣ Actualizar el estado de la entrada a 'Finished'
             await pb.collection("Entrys").update(entryId, {
                 id_status: finishedStatus.id,
             });
 
-            // 5️⃣ Respuesta exitosa
+            // 7️⃣ Respuesta exitosa
             return {
                 status: "success",
                 message: "✅ Entrada finalizada correctamente (estatus 'Finished').",
             };
-
         } catch (error: any) {
             console.error("❌ Error al finalizar entrada:", error);
             return {

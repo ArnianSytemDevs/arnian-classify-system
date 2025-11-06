@@ -1,7 +1,7 @@
 import React, { type ChangeEvent } from "react";
 import { Modal, TextField } from "@mui/material";
-import { IoMdCloseCircleOutline } from "react-icons/io";
-import { TiMinusOutline } from "react-icons/ti";
+// import { IoMdCloseCircleOutline } from "react-icons/io";
+// import { TiMinusOutline } from "react-icons/ti";
 import { FaRegWindowClose } from "react-icons/fa";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { useTranslation } from "react-i18next";
@@ -176,7 +176,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           dark:bg-slate-800 dark:text-cyan-300
         "
       >
-        {/* HEADER */}
+        {/* HEADER
         <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
           <button
             onClick={() => setOpenModal(false)}
@@ -193,7 +193,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
             {mode === "edit" ? t("clients.edit") : t("clients.create")}
           </p>
-        </div>
+        </div> */}
 
         {/* BODY */}
         <div className="overflow-auto p-5">
@@ -284,11 +284,23 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
 
             {/* IMÁGENES */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
-                Imágenes / Archivos
+              <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
+                Archivos
               </label>
-              <input type="file" multiple onChange={handleFileChange} className="mb-4" />
-
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-700 
+                          border border-cyan-500 rounded-lg cursor-pointer 
+                          bg-cyan-50 dark:bg-slate-800 dark:text-gray-200 
+                          focus:outline-none file:mr-4 file:py-2 file:px-4 
+                          file:rounded-md file:border-0 
+                          file:text-sm file:font-semibold 
+                          file:bg-cyan-600 file:text-white 
+                          hover:file:bg-cyan-700"
+              />
+              <br/>
               {clientsState.clientForm.image.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {clientsState.clientForm.image.map((file: File | string) => (
@@ -328,7 +340,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           >
             Cancelar
           </button>
-          <UserPermissions permission="save" role={role} >
+          <UserPermissions permission="saveClient" role={role} >
             <button
               disabled={!isValid()}
               onClick={handleSubmit}

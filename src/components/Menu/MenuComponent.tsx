@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router';
 import Swal from "sweetalert2";
 
 export default function MenuComponent() {
-    const { setSelectedWindow } = useClassifyContext();
+    const { setSelectedWindow,classifyDispatch, productDispatch, entryDispatch, suppliersDispatch, clientsDispatch } = useClassifyContext();
     const [lengOpen, setLengOpen] = useState(false);
     const { t, i18n } = useTranslation();
     const navigate = useNavigate()
@@ -51,6 +51,11 @@ export default function MenuComponent() {
             const resp = await HomeController.logout();
 
             if (resp.status === "success") {
+                entryDispatch({type:"clear-state"})
+                productDispatch({ type:"clear-state" })
+                classifyDispatch({ type:"clear-all" })
+                suppliersDispatch({ type:"clear-state" })
+                clientsDispatch({ type:"clear-state" })
             await Swal.fire({
                 icon: "success",
                 title: "Sesión cerrada",

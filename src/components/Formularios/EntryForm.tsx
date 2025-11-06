@@ -2,8 +2,8 @@ import React, { useEffect, useState, type ChangeEvent } from 'react';
 import { Autocomplete, Modal, TextField } from '@mui/material'
 import { type Dispatch, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next';
-import { IoMdCloseCircleOutline } from "react-icons/io";
-import { TiMinusOutline } from "react-icons/ti";
+// import { IoMdCloseCircleOutline } from "react-icons/io";
+// import { TiMinusOutline } from "react-icons/ti";
 import { entryFormController } from './EntryForm.controller';
 import type { Clients, Status, Supplier } from '../../types/collections';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
@@ -231,23 +231,20 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     return (
         <Modal open={openModal} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <div className="flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300dark:bg-slate-800 dark:text-cyan-300">
-                <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
+                {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
                     <button
                     onClick={() => setOpenModal(false)}
                     className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
                     >
                     <IoMdCloseCircleOutline />
                     </button>
-                    {/* <button className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-green-500 rounded-sm cursor-pointer">
-                    <FaRegSave />
-                    </button> */}
                     <button onClick={(()=>setOpenModal(false))} className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer">
                     <TiMinusOutline />
                     </button>
                     <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
                     {t("Entrys.btnCreate")}
                     </p>
-                </div>
+                </div> */}
                 <div className=" overflow-auto p-5 dark:bg-slate-800">
                     <form className=" grid grid-cols-2 gap-5 " >
                         <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.public_key")} />
@@ -303,16 +300,24 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                         />
 
                         <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
-                            Archivos
+                            <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
+                                Archivos
                             </label>
                             <input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            multiple
-                            onChange={handleFileChange}
-                            className="mb-4"
+                                type="file"
+                                accept="application/pdf"
+                                multiple
+                                onChange={handleFileChange}
+                                className="block w-full text-sm text-gray-700 
+                                        border border-cyan-500 rounded-lg cursor-pointer 
+                                        bg-cyan-50 dark:bg-slate-800 dark:text-gray-200 
+                                        focus:outline-none file:mr-4 file:py-2 file:px-4 
+                                        file:rounded-md file:border-0 
+                                        file:text-sm file:font-semibold 
+                                        file:bg-cyan-600 file:text-white 
+                                        hover:file:bg-cyan-700"
                             />
+                            <br/>
             
                             {entryState.entryForm.files.length > 0 && (
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
@@ -356,7 +361,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                     >
                         Cancelar
                     </button>
-                    <UserPermissions permission="save" role={role} >
+                    <UserPermissions permission="saveEntry" role={role} >
                         <button disabled={!isValid()} onClick={(e)=>{ handleSubmit(e) }} className={isValid() ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer":"px-4 py-2 rounded-md bg-gray-600 text-white cursor-not-allowed"}>
                             {mode == "create"? t("Entrys.form.btnCreate"):t("Entrys.form.btnUpdate")}
                         </button>
