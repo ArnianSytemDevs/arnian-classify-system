@@ -1175,7 +1175,7 @@ export default function Classify() {
                                     variant="filled"
                                     disabled={!p.edit}
                                     name="tariff_fraction"
-                                    type="number"
+                                    type="text"
                                     value={p.tariff_fraction}
                                     sx={inputText}
                                     label={t("Classify.list.lblFractionMX")}
