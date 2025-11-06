@@ -35,6 +35,8 @@ export type Entry = {
     subtotal: number;
     packing_price: number;
     other_price: number;
+    is_reviewed:boolean;
+    is_classify:boolean;
     total: number;
     total_limbs: number;
     net_weight_total: number;
@@ -45,8 +47,6 @@ export type Classification = {
     public_key: string
     id_product: Product['id']
     id_entry: Entry['id']
-    lote: string
-    batch: string,
     tariff_fraction: number
     lumps: number
     field: number
@@ -54,6 +54,12 @@ export type Classification = {
     comments: string
     origin_country: string
     origin_seller: string
+    quantity:number
+    net_weight:number
+    partys:number
+    unit_type:any
+    unit_weight:any
+    deprected:boolean
     created: string
     updated: string
 }
@@ -64,23 +70,24 @@ export type Product = {
     name?: string;
     alias?: string;
     code?: string;
-    is_deleted?: boolean;
     part_number?: string;
-    description?: string;
     model?: string;
     brand?: string;
-    unit_price?: number;
     serial_number?: string;
     id_measurement?: Measurement['id']; // relation → Measurements
     weight?: number;
-    id_status?: Status['id'];      // relation → Status
     id_supplier?: Supplier['id'];    // relation → Supplier
+    unit_price?: number;
+    description?: string;
+    traduction: string;
     files?: string[];        // file array
+    id_status?: Status['id'];      // relation → Status
+    is_deleted?: boolean;
     deprected?: boolean;
+    is_reviewed:boolean;
+    is_classify:boolean;
     created: string;
     updated: string;
-    // origin_country: string;
-    // seller_country: string;
 }
 
 export type Supplier = {
@@ -154,4 +161,15 @@ export type Clients = {
         lat: number
     },
     image: any
+}
+
+export type Entry_products = {
+    id:string;
+    id_entry:string;
+    id_product:string;
+    is_damage:boolean;
+    lote: string;
+    batch: string;
+    created: string;
+    updated: string;
 }

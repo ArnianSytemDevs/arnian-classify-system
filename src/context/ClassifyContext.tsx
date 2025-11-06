@@ -1,4 +1,4 @@
-import React,{ useState,createContext, type Dispatch, useReducer } from "react"
+import React,{ useState,createContext, type Dispatch, useReducer, type SetStateAction } from "react"
 import { ProductInitialState, ProductReducer, type ProductsActions, type ProductState } from "../reducers/product-reducer"
 import { EntryInitialState, EntryReducer, type EntrysActions, type EntryState } from "../reducers/entry-reducer"
 import { ClassifyInitialState, type ClassifyActions, ClassifyReducer, type ClassifyState } from "../reducers/classify-reducer"
@@ -18,6 +18,10 @@ type ClassifyContextProops ={
     clientsDispatch: Dispatch<ClientsActions>
     suppliersState: SupplierState
     suppliersDispatch: Dispatch<SupplierActions>
+    role:string
+    setRole:Dispatch<SetStateAction<string>>
+    typeCheck:string
+    setTypeCheck:Dispatch<SetStateAction<string>>
 }
 
 type ClassifyContextProvidersProops = {
@@ -34,6 +38,8 @@ export const ClassifyProvider = ({children}: ClassifyContextProvidersProops) => 
     const [classifyState,classifyDispatch] = useReducer(ClassifyReducer,ClassifyInitialState)
     const [clientsState,clientsDispatch] = useReducer(ClientsReducer,ClientsInitialState)
     const [suppliersState, suppliersDispatch] = useReducer(SupplierReducer,SupplierInitialState)
+    const [role, setRole] = useState("");
+    const [typeCheck,setTypeCheck] = useState("")
     return(
         <ClassifyContext.Provider
             value={{
@@ -48,7 +54,11 @@ export const ClassifyProvider = ({children}: ClassifyContextProvidersProops) => 
                 clientsState,
                 clientsDispatch,
                 suppliersState,
-                suppliersDispatch
+                suppliersDispatch,
+                role,
+                setRole,
+                typeCheck,
+                setTypeCheck
             }}
         >
             {children}

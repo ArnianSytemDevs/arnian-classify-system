@@ -44,6 +44,7 @@
         "btnDelete":"Delete classify",
         "btnGet":"Classifty list",
         "btnStart":"Start classifying",
+        "btnReview":"Start review",
         "lblProd":"Search and add product",
         "list":{
             "lblOptions":"Options",
@@ -65,9 +66,11 @@
             "lblFractionMX":"Tariff fraction",
             "lblParty":"Party",
             "lblItem":"Item",
+            "lblDesc":"Description",
             "lblLumps":"Lumps",
             "lblTotalValue":"Total value",
-            "lblDamage":"Damage?"
+            "lblDamage":"Damage?",
+            "public_key":"Load number"
         }
     },
     "Users":{

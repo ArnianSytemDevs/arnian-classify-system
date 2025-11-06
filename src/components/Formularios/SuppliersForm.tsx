@@ -1,11 +1,12 @@
     import React from "react";
     import { Modal, TextField } from "@mui/material";
-    import { IoMdCloseCircleOutline } from "react-icons/io";
-    import { TiMinusOutline } from "react-icons/ti";
+    // import { IoMdCloseCircleOutline } from "react-icons/io";
+    // import { TiMinusOutline } from "react-icons/ti";
     import { useTranslation } from "react-i18next";
     import { SuppliersFormController } from "./SuppliersForm.controller";
     import { useClassifyContext } from "../../hooks/useClassifyContext";
     import type { Status } from "../../types/collections";
+import UserPermissions from "../../hooks/usePremission";
 
     type SuppliersFormProps = {
     openModal: boolean;
@@ -15,29 +16,32 @@
     };
 
     export default function SuppliersForm({ openModal, setOpenModal, mode }: SuppliersFormProps) {
-    const { suppliersState, suppliersDispatch } = useClassifyContext();
+    const { suppliersState, suppliersDispatch, role } = useClassifyContext();
     const { t } = useTranslation();
 
     /* ============================================================
         🎨 Estilos MUI
     ============================================================ */
     const inputText = {
-        "& .MuiInputBase-root": {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
+    "& .MuiInputBase-root": {
         color: "text.primary",
-        backgroundColor: "background.paper",
-        },
-        "& .MuiInputLabel-root": {
-        color: "text.secondary",
-        },
-        "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: "divider",
-        },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#06b6d4",
-        },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#0891b2",
-        },
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
     };
 
     /* ============================================================
@@ -100,28 +104,29 @@
             "
         >
             {/* HEADER */}
-            <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-            <button
-                onClick={() => setOpenModal(false)}
-                className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-            >
-                <IoMdCloseCircleOutline />
-            </button>
-            <button
-                onClick={() => setOpenModal(false)}
-                className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
-            >
-                <TiMinusOutline />
-            </button>
-            <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-                {mode === "edit" ? t("suppliers.edit") : t("suppliers.create")}
-            </p>
-            </div>
+            {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
+                <button
+                    onClick={() => setOpenModal(false)}
+                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
+                >
+                    <IoMdCloseCircleOutline />
+                </button>
+                <button
+                    onClick={() => setOpenModal(false)}
+                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
+                >
+                    <TiMinusOutline />
+                </button>
+                <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
+                    {mode === "edit" ? t("suppliers.edit") : t("suppliers.create")}
+                </p>
+            </div> */}
 
             {/* BODY */}
             <div className="overflow-auto p-5">
             <form className="grid grid-cols-2 gap-5" onSubmit={handleSubmit}>
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="name"
@@ -135,6 +140,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="alias"
@@ -147,6 +153,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="rfc"
@@ -160,6 +167,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="vin"
@@ -172,6 +180,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="address"
@@ -185,6 +194,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="text"
                 id="postal_code"
@@ -198,6 +208,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="email"
                 id="email"
@@ -211,6 +222,7 @@
                 />
 
                 <TextField
+                variant='filled'
                 sx={inputText}
                 type="tel"
                 id="phone_number"
@@ -237,20 +249,22 @@
                 Cancelar
             </button>
 
-            <button
-                disabled={!isValid()}
-                type="submit"
-                onClick={handleSubmit}
-                className={
-                isValid()
-                    ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
-                    : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
-                }
-            >
-                {mode === "edit"
-                ? t("actions.save", { defaultValue: "Guardar" })
-                : t("actions.create", { defaultValue: "Crear" })}
-            </button>
+            <UserPermissions permission="saveSupplier" role={role}> 
+                <button
+                    disabled={!isValid()}
+                    type="submit"
+                    onClick={handleSubmit}
+                    className={
+                    isValid()
+                        ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                        : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
+                    }
+                >
+                    {mode === "edit"
+                    ? t("actions.save", { defaultValue: "Guardar" })
+                    : t("actions.create", { defaultValue: "Crear" })}
+                </button>
+            </UserPermissions>
             </div>
         </div>
         </Modal>

@@ -10,11 +10,13 @@ import ProductForm from '../../components/Formularios/ProductForm';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
 import { ProductController } from './Product.controller';
 import { type Status } from '../../types/collections';
+import UserPermissions from '../../hooks/usePremission';
+import { checkRole } from '../../hooks/usePremission.controller';
 
 export default function Products() {
 
     const { t } = useTranslation();
-    const {productState} = useClassifyContext()
+    const {productState,role,setRole} = useClassifyContext()
     const [mode,setMode] = useState("create")
     const [option,setOption] = useState(1)
     const [status,setStatus] = useState<Status[]>([])
@@ -30,6 +32,14 @@ export default function Products() {
                 setStatus(resp)
             })
     },[])
+
+    useEffect(() => {
+        const getRole = async () => {
+            const userRole = await checkRole();
+            setRole(userRole);
+        };
+        getRole();
+    }, []);
 
     const handleDeleteProduct = () => {
         ProductController.deleteProducts(productState.productList).then( (resp) => {
@@ -52,11 +62,17 @@ return (
                 <br></br>
                 <button onClick={()=>{ setOption(1) }} className={ option == 1? btnSelected:btnUnselected } > < FaListAlt className=' text-md ' /> {t("products.btnGet")}</button>
                 <br></br>
-                <button onClick={()=>{ setOpen(!open); setMode('çreate') }} className={ option == 2? btnSelected:btnUnselected } > < MdCreateNewFolder className=' text-md ' /> {t("products.btnCreate")}</button>
+                <UserPermissions permission='createProducts' role={role} >
+                    <button onClick={()=>{ setOpen(!open); setMode('çreate') }} className={ option == 2? btnSelected:btnUnselected } > < MdCreateNewFolder className=' text-md ' /> {t("products.btnCreate")}</button>
+                </UserPermissions>
                 <br></br>
-                <button  disabled={productState.productList.length > 1 || productState.productList.length == 0 } onClick={()=>{ setOpen(!open); setMode("edit");}} className={ productState.productList.length >> 1 || productState.productList.length == 0 ? btnDisabled : option == 3? btnSelected:btnUnselected } > < MdEditSquare className=' text-md ' /> {t("products.btnUpdate")}</button>
+                <UserPermissions permission='editProducts' role={role} >
+                    <button  disabled={productState.productList.length > 1 || productState.productList.length == 0 } onClick={()=>{ setOpen(!open); setMode("edit");}} className={ productState.productList.length >> 1 || productState.productList.length == 0 ? btnDisabled : option == 3? btnSelected:btnUnselected } > < MdEditSquare className=' text-md ' /> {t("products.btnUpdate")}</button>
+                </UserPermissions>
                 <br></br>
-                <button  disabled={productState.productList.length <= 0 } onClick={()=>{ handleDeleteProduct() }} className={ productState.productList.length == 0 ? btnDisabled : option == 4? btnSelected:btnUnselected } > < FaTrashAlt className=' text-md ' /> {t("products.btnDelete")}</button>
+                <UserPermissions permission='deleteProducts' role={role} >
+                    <button  disabled={productState.productList.length <= 0 } onClick={()=>{ handleDeleteProduct() }} className={ productState.productList.length == 0 ? btnDisabled : option == 4? btnSelected:btnUnselected } > < FaTrashAlt className=' text-md ' /> {t("products.btnDelete")}</button>
+                </UserPermissions>
             </div>
             <div className=' w-full h-full dark:bg-slate-800 dark:text-cyan-300 ' >
                 <div className=' px-5 py-5 flex flex-row w-full items-center ' >

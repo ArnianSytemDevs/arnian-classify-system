@@ -2,425 +2,377 @@ import { useEffect, useState } from "react";
 import ProductListController from "./ProductList.controller";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import type { Product, Status, Supplier } from "../../types/collections";
-import type { productFilters } from "../../types/forms";
+import type { ProductsFilters } from "../../helpers/pocketbase/Products";
 import {
-    Modal,
-    TextField,
-    Switch,
-    FormControl,
-    Select,
-    MenuItem,
-    Autocomplete,
+  Modal,
+  TextField,
+  Switch,
+  FormControl,
+  Select,
+  MenuItem,
+  Autocomplete,
+  Button,
 } from "@mui/material";
-import { FaFilter } from "react-icons/fa";
+import { FaFilter, FaBroom } from "react-icons/fa";
 import type { SelectChangeEvent } from "@mui/material";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-import NoPhoto from "../../assets/NotPhoto.png"
+import NoPhoto from "../../assets/NotPhoto.png";
 
-type ProductListProops = {
-    status: Status[];
+type ProductListProps = {
+  status: Status[];
 };
 
-export default function ProductList({ status }: ProductListProops) {
-    const { productDispatch } = useClassifyContext();
-    const [products, setProducts] = useState<any[]>([]);
-    const [openMod, setOpenMod] = useState(false);
-    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-    const [inputValue, setInputValue] = useState("");
-    const [filters, setFilters] = useState<productFilters>({
-        id: "",
-        public_key: "",
-        name: "",
-        alias: "",
-        code: "",
-        is_deleted: false,
-        part_number: "",
-        model: "",
-        brand: "",
-        serial_number: "",
-        // color: "",
-        id_status: "",
-        id_supplier: "",
-        deprected: false,
-        created: "",
-        updated: "",
-    });
+export default function ProductList({ status }: ProductListProps) {
+  const { productDispatch } = useClassifyContext();
+  const [products, setProducts] = useState<any[]>([]);
+  const [openMod, setOpenMod] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [inputValue, setInputValue] = useState("");
 
-    // ✅ estilos coherentes
-    const thBody =
-        "px-5 py-4 text-sm font-mono font-light text-left text-gray-800 dark:text-gray-200 ";
-    const thHead =
-        "px-5 py-2 font-semibold transition text-left text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-t-md";
-    const inputText = {
-        "& .MuiInputBase-root": {
-            color: "text.primary", // hereda del tema
-            backgroundColor: "background.paper",
+  const [filters, setFilters] = useState<ProductsFilters>({
+    id: "",
+    public_key: "",
+    name: "",
+    alias: "",
+    code: "",
+    is_deleted: false,
+    part_number: "",
+    model: "",
+    brand: "",
+    serial_number: "",
+    id_status: "",
+    id_supplier: "",
+    deprected: false,
+    created: "",
+    updated: "",
+  });
+
+  // ✅ estilos coherentes
+  const thBody =
+    "px-5 py-4 text-sm font-mono font-light text-left text-gray-800 dark:text-gray-200";
+  const thHead =
+    "px-5 py-2 font-semibold transition text-left text-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-t-md";
+  const inputText = {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
         },
-        "& .MuiInputLabel-root": {
-            color: "text.secondary",
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
         },
-        "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "divider",
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
         },
-        "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "#06b6d4", // cyan-500
-        },
-        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: "#0891b2", // cyan-600
-        },
+    },
+    "& .MuiInputBase-root": {
+        color: "text.primary",
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
+
+  /* =======================================================
+     🎯 Efectos para cargar y filtrar productos
+  ======================================================= */
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      ProductListController.getProdList(setProducts, filters);
+    }, 600);
+
+    return () => {
+      clearTimeout(delayDebounce);
+      ProductListController.unsubscribe();
+    };
+  }, [filters]);
+
+  useEffect(() => {
+    if (openMod && inputValue.trim() !== "") {
+      ProductListController.getSuppliers(inputValue).then((resp: any) => {
+        setSuppliers(resp);
+      });
+    } else {
+      setSuppliers([]);
     }
+  }, [inputValue, openMod]);
 
-    useEffect(() => {
-        ProductListController.getProdList(setProducts, filters);
-        return () => {
-            ProductListController.unsubscribe();
-        };
-    }, [filters]);
+  /* =======================================================
+     🧩 Handlers de filtros y cambios
+  ======================================================= */
+  const handleAutocomplete = (_: any, newValue: Supplier | null) => {
+    setFilters((prev) => ({
+      ...prev,
+      id_supplier: newValue ? newValue.id : "",
+    }));
+  };
 
-    useEffect(() => {
-        if (openMod) {
-            if (inputValue.trim() !== "") {
-                ProductListController.getSuppliers(inputValue).then((resp: any) => {
-                    setSuppliers(resp);
-                });
-            } else {
-                setSuppliers([]);
-            }
-        }
-    }, [inputValue, openMod]);
+  const handleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
 
-    const handleAutocomplete = (_: any, newValue: Supplier | null) => {
-        setFilters((prev) => ({
-            ...prev,
-            id_supplier: newValue ? newValue.id : "",
-        }));
-    };
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
+  ) => {
+    const { name, value } = e.target;
+    if ("type" in e.target) {
+      const target = e.target as HTMLInputElement;
+      setFilters((prev) => ({
+        ...prev,
+        [name]:
+          target.type === "checkbox"
+            ? target.checked
+            : target.type === "number"
+            ? Number(value)
+            : value,
+      }));
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
 
-    const handleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = e.target;
-        setFilters((prev) => ({
-            ...prev,
-            [name]: checked,
-        }));
-    };
+  const clearFilters = () => {
+    setFilters({
+      id: "",
+      public_key: "",
+      name: "",
+      alias: "",
+      code: "",
+      is_deleted: false,
+      part_number: "",
+      model: "",
+      brand: "",
+      serial_number: "",
+      id_status: "",
+      id_supplier: "",
+      deprected: false,
+      created: "",
+      updated: "",
+    });
+  };
 
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent
-    ) => {
-        const { name, value } = e.target;
+  /* =======================================================
+     🖼️ Render de imagen del producto
+  ======================================================= */
+  const renderImage = (file: string, record: Product) => {
+    if (record.files?.length) {
+      const fileName = record.files[0];
+      const url = pb.files.getURL(record, fileName);
+      const ext = fileName.toLowerCase();
 
-        if ("type" in e.target) {
-            const target = e.target as HTMLInputElement;
-            setFilters((prev) => ({
-                ...prev,
-                [name]:
-                    target.type === "checkbox"
-                        ? target.checked
-                        : target.type === "number"
-                        ? Number(value)
-                        : value,
-            }));
-        } else {
-            setFilters((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
-        }
-    };
-
-    const renderImage = (file:string,record:Product) => {
-        const lower = file[0].toLowerCase();
-        const url = pb.files.getURL(record, file);
-
-        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+      if (ext.endsWith(".jpg") || ext.endsWith(".jpeg") || ext.endsWith(".png"))
         return (
-            <img
+          <img
             src={url || NoPhoto}
             alt={file}
             className="w-20 h-20 object-cover rounded border"
-            />
+          />
         );
-        }
 
-        if (lower.endsWith(".pdf")) {
+      if (ext.endsWith(".pdf"))
         return (
-            <div className="flex flex-col items-center text-red-500">
-            📄 <span className="text-xs truncate w-20">{file}</span>
-            </div>
+          <div className="flex flex-col items-center text-red-500">
+            📄 <span className="text-xs truncate w-20">{fileName}</span>
+          </div>
         );
-        }
 
-        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+      if (ext.endsWith(".doc") || ext.endsWith(".docx"))
         return (
-            <div className="flex flex-col items-center text-blue-500">
-            📝 <span className="text-xs truncate w-20">{file}</span>
-            </div>
+          <div className="flex flex-col items-center text-blue-500">
+            📝 <span className="text-xs truncate w-20">{fileName}</span>
+          </div>
         );
-        }
 
-        return (
+      return (
         <div className="flex flex-col items-center text-gray-500">
-            📦 <span className="text-xs truncate w-20">{file}</span>
+          📦 <span className="text-xs truncate w-20">{fileName}</span>
         </div>
-        );
+      );
+    } else {
+      return (
+        <img
+          src={NoPhoto}
+          alt={file}
+          className="w-20 h-20 object-cover rounded border"
+        />
+      );
     }
+  };
 
-    return (
-        <>
-            <div className="overflow-y-auto max-h-[calc(100vh-80px)] w-full">
-                <table className="w-full border-collapse">
-                    <thead className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
-                    <tr>
-                        <th className="px-2 py-2 font-semibold text-gray-700 dark:text-gray-200">
-                        <button
-                            className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition"
-                            onClick={() => setOpenMod(true)}
-                        >
-                            <FaFilter className="text-gray-600 dark:text-cyan-300" />
-                        </button>
-                        </th>
-                        <th className={thHead}></th>
-                        <th className={thHead}>Alias</th>
-                        <th className={thHead}>Name</th>
-                        <th className={thHead}>Code</th>
-                        <th className={thHead}>Brand</th>
-                        <th className={thHead}>Model</th>
-                        <th className={thHead}>Description</th>
-                        <th className={thHead}>Status</th>
-                    </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-x divide-gray-200 dark:divide-gray-500">
-                    {products.map((p) => (
-                        <tr
-                        key={p.id}
-                        className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
-                        >
-                        <td className={thBody}>
-                            <input
-                            className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                            type="checkbox"
-                            onChange={(e) =>
-                                productDispatch({
-                                type: "change-box",
-                                payload: { product: p, status: e.target.checked },
-                                })
-                            }
-                            />
-                        </td>
-                        <td className={thBody}>{renderImage(p.files, p)}</td>
-                        <td className={thBody}>{p.alias}</td>
-                        <td className={thBody}>{p.name}</td>
-                        <td className={thBody}>{p.code}</td>
-                        <td className={thBody}>{p.brand}</td>
-                        <td className={thBody}>{p.model}</td>
-                        <td className={thBody + " max-w-70 line-clamp-3"}>{p.description}</td>
-                        <td
-                            className={thBody}
-                            style={{
-                            color: `#${status.find((st) => st.id === p.id_status)?.color || "FFF"}`,
-                            fontWeight: "bold",
-                            }}
-                        >
-                            {status.find((st) => st.id === p.id_status)?.name || "N/A"}
-                        </td>
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-
-
-
-            {/* ✅ Modal adaptado a light/dark */}
-            <Modal
-                open={openMod}
-                onClose={() => setOpenMod(false)}
-                sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-            >
-                <div
-                    className="
-                        flex flex-col bg-white dark:bg-slate-800 shadow-lg 
-                        w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 
-                        transition-all duration-300 rounded-lg overflow-y-auto
-                    "
+  /* =======================================================
+     🧾 Render principal
+  ======================================================= */
+  return (
+    <>
+      {/* 🔹 Tabla principal */}
+      <div className="overflow-y-auto max-h-[calc(100vh-80px)] w-full">
+        <table className="w-full border-collapse">
+          <thead className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-slate-800 sticky top-0 z-10">
+            <tr>
+              <th className="px-2 py-2 font-semibold text-gray-700 dark:text-gray-200">
+                <button
+                  className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition"
+                  onClick={() => setOpenMod(true)}
+                  title="Filtrar productos"
                 >
-                    <div className="grid grid-cols-2 gap-5 p-5 text-gray-800 dark:text-gray-200">
-                        <TextField
-                            sx={inputText}
-                            id="id"
-                            name="id"
-                            label="id"
-                            value={filters.id}
-                            onChange={handleChange}
-                            variant="outlined"
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="public_key"
-                            name="public_key"
-                            label="public_key"
-                            value={filters.public_key}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="name"
-                            name="name"
-                            label="name"
-                            value={filters.name}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="alias"
-                            name="alias"
-                            label="alias"
-                            value={filters.alias}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="code"
-                            name="code"
-                            label="code"
-                            value={filters.code}
-                            onChange={handleChange}
-                            fullWidth
-                        />
+                  <FaFilter className="text-gray-600 dark:text-cyan-300" />
+                </button>
+              </th>
+              <th className={thHead}></th>
+              <th className={thHead}>Alias</th>
+              <th className={thHead}>Nombre</th>
+              <th className={thHead}>Código</th>
+              <th className={thHead}>Marca</th>
+              <th className={thHead}>Modelo</th>
+              <th className={thHead}>Descripción</th>
+              <th className={thHead}>Estatus</th>
+            </tr>
+          </thead>
 
-                        <FormControl>
-                            <label className="text-gray-700 dark:text-gray-300">Deprected</label>
-                            <Switch
-                                id="deprected"
-                                name="deprected"
-                                checked={filters.deprected}
-                                onChange={handleSwitch}
-                            />
-                        </FormControl>
+          <tbody className="divide-y divide-x divide-gray-200 dark:divide-gray-500">
+            {products.map((p) => (
+              <tr
+                key={p.id}
+                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+              >
+                <td className={thBody}>
+                  <input
+                    className="w-5 h-5 accent-cyan-600 cursor-pointer"
+                    type="checkbox"
+                    onChange={(e) =>
+                      productDispatch({
+                        type: "change-box",
+                        payload: { product: p, status: e.target.checked },
+                      })
+                    }
+                  />
+                </td>
+                <td className={thBody}>{renderImage(p.files, p)}</td>
+                <td className={thBody}>{p.alias}</td>
+                <td className={thBody}>{p.name}</td>
+                <td className={thBody}>{p.code}</td>
+                <td className={thBody}>{p.brand}</td>
+                <td className={thBody}>{p.model}</td>
+                <td className={`${thBody} max-w-70 line-clamp-3`}>{p.description}</td>
+                <td
+                  className={thBody}
+                  style={{
+                    color: `#${status.find((st) => st.id === p.id_status)?.color || "FFF"}`,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {status.find((st) => st.id === p.id_status)?.name || "N/A"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-                        <TextField
-                            sx={inputText}
-                            id="part_number"
-                            name="part_number"
-                            label="part_number"
-                            value={filters.part_number}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="model"
-                            name="model"
-                            label="model"
-                            value={filters.model}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="brand"
-                            name="brand"
-                            label="brand"
-                            value={filters.brand}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="serial_number"
-                            name="serial_number"
-                            label="serial_number"
-                            value={filters.serial_number}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        {/* <TextField
-                            sx={inputText}
-                            id="color"
-                            name="color"
-                            label="color"
-                            value={filters.color}
-                            onChange={handleChange}
-                            fullWidth
-                        /> */}
+      {/* 🔹 Modal de filtros */}
+      <Modal
+        open={openMod}
+        onClose={() => setOpenMod(false)}
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
+        <div
+          className="
+            flex flex-col bg-white dark:bg-slate-800 shadow-lg 
+            w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 
+            transition-all duration-300 rounded-lg overflow-y-auto
+          "
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 border-b dark:border-slate-700">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-cyan-300">
+              Filtros de productos
+            </h2>
+            <Button
+              variant="outlined"
+              size="small"
+              color="error"
+              startIcon={<FaBroom />}
+              onClick={clearFilters}
+            >
+              Limpiar
+            </Button>
+          </div>
 
-                        <FormControl fullWidth>
-                            <Select
-                            sx={ { background:"#FFF" } }
-                                id="id_status"
-                                name="id_status"
-                                value={filters.id_status}
-                                onChange={handleChange}
-                            >
-                                {status.map((st) => (
-                                    <MenuItem key={st.id} value={st.id}>
-                                        {st.name}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+          {/* Body */}
+          <div className="grid grid-cols-2 gap-5 p-5 text-gray-800 dark:text-gray-200">
+            <TextField variant='filled'  sx={inputText} name="id" label="ID" value={filters.id} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="public_key" label="Public Key" value={filters.public_key} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="name" label="Nombre" value={filters.name} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="alias" label="Alias" value={filters.alias} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="code" label="Código" value={filters.code} onChange={handleChange} fullWidth />
 
-                        <Autocomplete
-                            sx={{ width:'100%', "& .MuiInputBase-root": {
-                                color: "text.primary", // hereda del tema
-                                backgroundColor: "background.paper",
-                                },
-                                "& .MuiInputLabel-root": {
-                                    color: "text.secondary",
-                                },
-                                "& .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: "divider",
-                                },
-                                "&:hover .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: "#06b6d4", // cyan-500
-                                },
-                                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                    borderColor: "#0891b2", // cyan-600
-                                },
-                            }}
-                            id="id_supplier"
-                            disablePortal
-                            options={suppliers}
-                            value={suppliers.find((sp) => sp.id === filters.id_supplier) || null}
-                            getOptionLabel={(option) => `${option.name} (${option.alias})`}
-                            inputValue={inputValue}
-                            onInputChange={(_, newInputValue) => {
-                                setInputValue(newInputValue);
-                            }}
-                            onChange={handleAutocomplete}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Proveedor" fullWidth />
-                            )}
-                        />
+            <FormControl>
+              <label className="text-gray-700 dark:text-gray-300">Deprected</label>
+              <Switch id="deprected" name="deprected" checked={filters.deprected} onChange={handleSwitch} />
+            </FormControl>
 
-                        <TextField
-                            sx={inputText}
-                            id="created"
-                            name="created"
-                            type="date"
-                            label="created"
-                            value={filters.created}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                        <TextField
-                            sx={inputText}
-                            id="updated"
-                            name="updated"
-                            type="date"
-                            label="updated"
-                            value={filters.updated}
-                            onChange={handleChange}
-                            fullWidth
-                        />
-                    </div>
-                </div>
-            </Modal>
-        </>
-    );
+            <TextField variant='filled' sx={inputText} name="part_number" label="Part Number" value={filters.part_number} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="model" label="Modelo" value={filters.model} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="brand" label="Marca" value={filters.brand} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="serial_number" label="No. Serie" value={filters.serial_number} onChange={handleChange} fullWidth />
+
+            <FormControl fullWidth>
+              <Select id="id_status" name="id_status" value={filters.id_status} onChange={handleChange} 
+              sx={{
+                    width: "100%",
+                    background:"#FFF",
+                    "& .MuiInputBase-root": {
+                        color: "text.primary",
+                        backgroundColor: "background.paper",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "divider",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#06b6d4", // cyan-500
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#0891b2", // cyan-600
+                    },
+                    "& .MuiSvgIcon-root": {
+                        color: "text.secondary", // icono flecha cambia con el modo
+                    },
+                }}
+                >
+                {status.map((st) => (
+                  <MenuItem key={st.id} value={st.id}>
+                    {st.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Autocomplete
+              sx={{ width: "100%" }}
+              id="id_supplier"
+              disablePortal
+              options={suppliers}
+              value={suppliers.find((sp) => sp.id === filters.id_supplier) || null}
+              getOptionLabel={(option) => `${option.name} (${option.alias})`}
+              inputValue={inputValue}
+              onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
+              onChange={handleAutocomplete}
+              renderInput={(params) => <TextField sx={inputText} variant='filled' {...params} label="Proveedor" fullWidth />}
+            />
+
+            <TextField variant='filled' sx={inputText} name="created" type="date" label="Creado desde" value={filters.created} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="updated" type="date" label="Actualizado desde" value={filters.updated} onChange={handleChange} fullWidth />
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
 }

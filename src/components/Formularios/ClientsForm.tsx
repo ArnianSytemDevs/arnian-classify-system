@@ -1,13 +1,14 @@
 import React, { type ChangeEvent } from "react";
 import { Modal, TextField } from "@mui/material";
-import { IoMdCloseCircleOutline } from "react-icons/io";
-import { TiMinusOutline } from "react-icons/ti";
+// import { IoMdCloseCircleOutline } from "react-icons/io";
+// import { TiMinusOutline } from "react-icons/ti";
 import { FaRegWindowClose } from "react-icons/fa";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { useTranslation } from "react-i18next";
 import { ClientsFormController } from "./ClientsForm.controller";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import type { Status } from "../../types/collections";
+import UserPermissions from "../../hooks/usePremission";
 
 type ClientsFormProps = {
   openModal: boolean;
@@ -17,30 +18,33 @@ type ClientsFormProps = {
 };
 
 export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFormProps) {
-  const { clientsState, clientsDispatch } = useClassifyContext();
+  const { clientsState, clientsDispatch,role } = useClassifyContext();
   const { t } = useTranslation();
 
   /* ============================================================
     🎨 Estilos MUI
   ============================================================ */
   const inputText = {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
     "& .MuiInputBase-root": {
-      color: "text.primary",
-      backgroundColor: "background.paper",
+        color: "text.primary",
     },
-    "& .MuiInputLabel-root": {
-      color: "text.secondary",
-    },
-    "& .MuiOutlinedInput-notchedOutline": {
-      borderColor: "divider",
-    },
-    "&:hover .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#06b6d4",
-    },
-    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-      borderColor: "#0891b2",
-    },
-  };
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
 
   /* ============================================================
      📸 Manejo de archivos (imágenes)
@@ -160,7 +164,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
   };
 
   /* ============================================================
-     🧱 Render principal
+      🧱 Render principal
   ============================================================ */
   return (
     <Modal open={openModal} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -172,7 +176,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           dark:bg-slate-800 dark:text-cyan-300
         "
       >
-        {/* HEADER */}
+        {/* HEADER
         <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
           <button
             onClick={() => setOpenModal(false)}
@@ -189,12 +193,13 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
             {mode === "edit" ? t("clients.edit") : t("clients.create")}
           </p>
-        </div>
+        </div> */}
 
         {/* BODY */}
         <div className="overflow-auto p-5">
           <form className="grid grid-cols-2 gap-5">
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="name"
@@ -206,6 +211,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="alias"
@@ -217,6 +223,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="field"
@@ -228,6 +235,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="rfc"
@@ -239,6 +247,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="text"
               id="address"
@@ -250,6 +259,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="number"
               id="postal_code"
@@ -261,6 +271,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
             />
 
             <TextField
+              variant='filled'
               sx={inputText}
               type="email"
               id="email"
@@ -273,11 +284,23 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
 
             {/* IMÁGENES */}
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-cyan-300">
-                Imágenes / Archivos
+              <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
+                Archivos
               </label>
-              <input type="file" multiple onChange={handleFileChange} className="mb-4" />
-
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="block w-full text-sm text-gray-700 
+                          border border-cyan-500 rounded-lg cursor-pointer 
+                          bg-cyan-50 dark:bg-slate-800 dark:text-gray-200 
+                          focus:outline-none file:mr-4 file:py-2 file:px-4 
+                          file:rounded-md file:border-0 
+                          file:text-sm file:font-semibold 
+                          file:bg-cyan-600 file:text-white 
+                          hover:file:bg-cyan-700"
+              />
+              <br/>
               {clientsState.clientForm.image.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                   {clientsState.clientForm.image.map((file: File | string) => (
@@ -317,20 +340,21 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
           >
             Cancelar
           </button>
-
-          <button
-            disabled={!isValid()}
-            onClick={handleSubmit}
-            className={
-              isValid()
-                ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
-                : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
-            }
-          >
-            {mode === "edit"
-              ? t("actions.save", { defaultValue: "Guardar" })
-              : t("actions.create", { defaultValue: "Crear" })}
-          </button>
+          <UserPermissions permission="saveClient" role={role} >
+            <button
+              disabled={!isValid()}
+              onClick={handleSubmit}
+              className={
+                isValid()
+                  ? "px-4 py-2 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                  : "px-4 py-2 rounded-md bg-gray-500 text-white cursor-not-allowed"
+              }
+            >
+              {mode === "edit"
+                ? t("actions.save", { defaultValue: "Guardar" })
+                : t("actions.create", { defaultValue: "Crear" })}
+            </button>
+          </UserPermissions>
         </div>
       </div>
     </Modal>

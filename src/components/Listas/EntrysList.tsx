@@ -5,6 +5,8 @@ import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { EntrysController } from "./Entrys.controller";
 import type { EntryFilters } from "../../types/forms";
 import { Autocomplete, FormControl, MenuItem, Modal, Select, Switch, TextField, type SelectChangeEvent} from "@mui/material";
+import NoPhoto from "../../assets/NotPhoto.png"
+import { pb } from "../../helpers/pocketbase/pocketbase";
 
 type EntrysListProops = {
     status: Status[];
@@ -79,13 +81,17 @@ export default function EntrysList({ status }: EntrysListProops) {
         }
     }, [inputCValue]);
 
-    /* 🔹 Realtime entries */
     useEffect(() => {
+    const delayDebounce = setTimeout(() => {
         EntrysController.getEntrys(setEntrys, filters);
-        return () => {
-        EntrysController.unsubscribe();
-        };
+    }, 800); // ⏱️ Espera 800 ms después del último cambio
+
+    return () => {
+        clearTimeout(delayDebounce); // 🔄 Reinicia el temporizador si el usuario sigue escribiendo
+        EntrysController.unsubscribe(); // 🚫 Cancela la suscripción anterior
+    };
     }, [filters]);
+
 
     /* 🔹 Switch handler */
     const handleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +131,66 @@ export default function EntrysList({ status }: EntrysListProops) {
         }));
     };
 
+    const renderImage = (file: string[], record: Entry) => {
+        if (record.file?.length > 0) {
+            const fileName = file[0];
+            const lower = fileName.toLowerCase();
+            const url = pb.files.getURL(record, fileName);
+
+            const handleOpen = () => window.open(url, "_blank");
+
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+                <img
+                src={url || NoPhoto}
+                alt={fileName}
+                className="w-20 h-20 object-cover rounded border cursor-pointer hover:opacity-80"
+                onClick={handleOpen}
+                />
+            );
+            }
+
+            if (lower.endsWith(".pdf")) {
+            return (
+                <div
+                onClick={handleOpen}
+                className="flex flex-row hover:border-1 hover:border-pink-500 items-center text-pink-500 cursor-pointer hover:opacity-80"
+                >
+                📄 <span className="text-sm truncate ">{fileName}</span>
+                </div>
+            );
+            }
+
+            if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+                <div
+                onClick={handleOpen}
+                className="flex flex-col items-center text-blue-500 cursor-pointer hover:opacity-80"
+                >
+                📝 <span className="text-xs truncate w-20">{fileName}</span>
+                </div>
+            );
+            }
+
+            return (
+            <div
+                onClick={handleOpen}
+                className="flex flex-col items-center text-gray-500 cursor-pointer hover:opacity-80"
+            >
+                📦 <span className="text-xs truncate w-20">{fileName}</span>
+            </div>
+            );
+        } else {
+            return (
+            <img
+                src={NoPhoto}
+                alt="Sin imagen"
+                className="w-20 h-20 object-cover rounded border opacity-70"
+            />
+            );
+        }
+    };
+
     return (
         <>
         <table className="w-full border-collapse">
@@ -140,6 +206,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                     <FaFilter className="text-gray-600 dark:text-cyan-300" />
                 </button>
                 </th>
+                <th className={thHead}>Document</th>
                 <th className={thHead}>TAX ID</th>
                 <th className={thHead}>Invoice</th>
                 <th className={thHead}>Fecha de creación</th>
@@ -150,7 +217,7 @@ export default function EntrysList({ status }: EntrysListProops) {
             {entrys.map((ent) => (
                 <tr
                 key={ent.id}
-                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition "
                 >
                 <td className={thBody}>
                     <input
@@ -167,6 +234,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                     }}
                     />
                 </td>
+                <td className={thBody}  >{renderImage(ent.file,ent)}</td>
                 <td className={thBody}>{ent.id_tax}</td>
                 <td className={thBody}>{ent.invoice_number}</td>
                 <td className={thBody}>

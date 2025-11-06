@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import ArnLogo from "../../assets/ArnianLogo.png";
 import { Autocomplete, FormControl, Switch, TextField } from "@mui/material";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
@@ -13,7 +14,6 @@ import Swal from "sweetalert2";
 import { ToastContainer, toast } from "react-toastify";
 import { MdEditSquare } from "react-icons/md";
 import type { classifyProduct } from "../../types/forms";
-import MenuComponent from "../../components/Menu/MenuComponent";
 import { CgSandClock } from "react-icons/cg";
 import { useNavigate } from "react-router";
 import { usePreventNavigation } from "../../hooks/ReturnAlert";
@@ -21,29 +21,29 @@ import { FaPlusSquare } from "react-icons/fa";
 import ProductForm from "../../components/Formularios/ProductForm";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import NoPhoto from '../../assets/NotPhoto.png'
+import { checkRole } from "../../hooks/usePremission.controller";
+import UserPermissions from "../../hooks/usePremission";
 
 export default function Classify() {
 
     usePreventNavigation()
 
     const { t } = useTranslation();
-    const { classifyState, classifyDispatch, entryDispatch } = useClassifyContext();
+    const { classifyState, classifyDispatch, entryDispatch, setRole, role } = useClassifyContext();
+    const navigate = useNavigate();
+
     const [inputProduct, setInputProduct] = useState("");
     const [products, setProducts] = useState<Product[]>([]);
-    const [inputUnit] = useState("");
-    const [inputMeasurement] = useState("");
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [units, setUnits] = useState<Units[]>([]);
     const [clients, setClients] = useState<Clients[]>([]);
-    const [measurements,setMeasurements] = useState<Measurement[]>([]);
-    const [countries,setCountries] = useState([])
+    const [measurements, setMeasurements] = useState<Measurement[]>([]);
+    const [countries,setCountries] = useState<any>([])
     const [createProduct,setCreateProduct] = useState(false)
-    const navigate = useNavigate()
-    
-    const thBody =
-        "px-1 text-xs md:text-sm font-semibold text-left text-gray-800 dark:text-gray-200 whitespace-nowrap min-w-40";
-    const thHead =
-        "px-4 py-2 font-semibold text-xs md:text-sm text-left text-gray-900 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 whitespace-nowrap";
+    const debouncedProduct = useDebounce(inputProduct, 800);
+
+    const thBody = "px-1 text-xs md:text-sm font-semibold text-left text-gray-800 dark:text-gray-200 whitespace-nowrap min-w-40";
+    const thHead = "px-4 py-2 font-semibold text-xs md:text-sm text-left text-gray-900 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 whitespace-nowrap";
     const inputText = {
     "& .MuiFilledInput-root": {
         backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
@@ -66,130 +66,100 @@ export default function Classify() {
     "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
     };
 
-    useEffect(()=>{
-        GetCountries().then((resp:any)=>{
-            setCountries(resp)
-        })
-    },[])
-
+    /* 🟢 1️⃣ Carga inicial */
     useEffect(() => {
-        const subtotal = classifyState.products.reduce(
-            (acc, p) => acc + ((Number(p.quantity) || 0) * (Number(p.unit_price) || 0)), 0
-        );
-
-        const net_weight_total = classifyState.products.reduce(
-            (acc, p) => acc + (Number(p.net_weight) || 0), 0
-        );
-
-        classifyDispatch({
-            type: "update-entry-financials",
-            payload: { net_weight_total: Number(net_weight_total) },
-        })
-
-        classifyDispatch({
-            type: "update-entry-financials",
-            payload: { subtotal: Number(subtotal) },
-        })
-    }, [classifyState.products]);
-    
-    useEffect(()=>{
-        const total = classifyState.entrySelected.other_price + classifyState.entrySelected.packing_price + classifyState.entrySelected.subtotal
-    
-        classifyDispatch({
-            type: "update-entry-financials",
-            payload: { total: Number(total) },
-        })
-    },[classifyState.entrySelected.other_price || classifyState.entrySelected.packing_price || classifyState.entrySelected.subtotal])
-
-    useEffect(() => {
-    const fetchClassifyData = async () => {
+    const loadInitialData = async () => {
         try {
-        const idEntry = classifyState.entrySelected.id;
-        if (!idEntry) return;
+        const [userRole, countriesResp, unitsResp, measurementsResp] :any = await Promise.all([
+            checkRole(),
+            GetCountries(),
+            ClassifyController.getUnits(),
+            ClassifyController.getMeasurement(),
+        ]);
 
-        const existingClassify = await ClassifyController.getClassifyByEntry(idEntry);
+        setRole(userRole);
+        setCountries(countriesResp);
+        setUnits(unitsResp);
+        setMeasurements(measurementsResp);
+        } catch (error) {
+        console.error("❌ Error en carga inicial:", error);
+        }
+    };
+    loadInitialData();
+    }, []);
 
-        if (existingClassify.length > 0) {
+    /* 🟣 2️⃣ Cargar datos según entrada seleccionada */
+    useEffect(() => {
+    const entry = classifyState.entrySelected;
+    console.log("🚀 ~ Classify ~ entry:", entry)
+    if (!entry?.id) {
+        classifyDispatch({ type: "clear-all" })
+        entryDispatch({ type: 'clear-state' })
+        navigate('/dashboard')
+        return;
+    }
+
+    const loadEntryData = async () => {
+        try {
+        const [suppliersResp, clientsResp, classifyList]: any = await Promise.all([
+            ClassifyController.getSuppliers(entry.id_supplier, "edit"),
+            ClassifyController.getClients(entry.id_client, "edit"),
+            ClassifyController.getClassifyByEntry(entry.id),
+        ]);
+        
+        setSuppliers(suppliersResp);
+        setClients(clientsResp);
+
+        if (classifyList.length > 0) {
             classifyDispatch({
             type: "set-product-classify-data",
-            payload: { products: existingClassify },
+            payload: { products: classifyList },
             });
         }
         } catch (error) {
-        console.error("❌ Error al cargar productos clasificados:", error);
+        console.error("❌ Error al cargar datos de la entrada:", error);
         }
     };
 
-    fetchClassifyData();
-    }, [classifyState.entrySelected.id]);
+    loadEntryData();
+    }, [classifyState.entrySelected?.id]);
 
-
-    // 🔹 Carga de proveedores y clientes según entrada seleccionada
+    /* 🟠 3️⃣ Cálculos automáticos (subtotal, total, net_weight_total) */
     useEffect(() => {
-        if (classifyState.entrySelected.id) {
-        ClassifyController.getSuppliers(classifyState.entrySelected.id_supplier, "edit")
-            .then((resp: any) => setSuppliers(resp))
-            .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+    const subtotal = classifyState.products.reduce(
+        (acc, p) => acc + ((Number(p.quantity) || 0) * (Number(p.unit_price) || 0)),
+        0
+    );
+    const net_weight_total = classifyState.products.reduce(
+        (acc, p) => acc + (Number(p.net_weight) || 0),
+        0
+    );
+    const total =
+        (classifyState.entrySelected.subtotal || 0) +
+        (classifyState.entrySelected.packing_price || 0) +
+        (classifyState.entrySelected.other_price || 0);
 
-        ClassifyController.getClients(classifyState.entrySelected.id_client, "edit")
-            .then((resp: any) => setClients(resp))
-            .catch((err) => console.error("❌ Error al cargar clientes:", err));
-        }else{
-            navigate("/dashboard");
-        }
-    }, [classifyState.entrySelected]);
+    classifyDispatch({
+        type: "update-entry-financials",
+        payload: { subtotal, net_weight_total, total },
+    });
+    }, [
+    classifyState.products,
+    classifyState.entrySelected.packing_price,
+    classifyState.entrySelected.other_price,
+    ]);
 
-    // 🔹 Carga inicial de unidades
+    /* 🔵 4️⃣ Buscar productos (con debounce hook) */
     useEffect(() => {
-        ClassifyController.getUnits()
-        .then((resp: any) => setUnits(resp))
-        .catch((err) => console.error("❌ Error al cargar unidades:", err));
-    }, []);
+    if (!debouncedProduct) {
+        setProducts([]);
+        return;
+    }
 
-    // 🔹 Actualización dinámica de unidades según filtro
-    useEffect(() => {
-        if (inputUnit) {
-        ClassifyController.getUnits(inputUnit)
-            .then((resp: any) => setUnits(resp))
-            .catch((err) => console.error("❌ Error al filtrar unidades:", err));
-        }
-    }, [inputUnit]);
-
-    // Carga Inicial de measurement
-    useEffect(() => {
-        ClassifyController.getMeasurement()
-        .then((resp: any) => setMeasurements(resp))
-        .catch((err) => console.error("❌ Error al cargar unidades:", err));
-    }, []);
-
-    // 🔹 Actualización dinámica de measurement según filtro
-    useEffect(() => {
-        if (inputMeasurement) {
-        ClassifyController.getMeasurement(inputMeasurement)
-            .then((resp: any) => setMeasurements(resp))
-            .catch((err) => console.error("❌ Error al filtrar unidades:", err));
-        }
-    }, [inputMeasurement]);
-
-    // 🔹 Buscar productos conforme se escribe
-    useEffect(() => {
-        // ⏳ Si no hay texto, limpiamos los productos inmediatamente
-        if (!inputProduct) {
-            setProducts([]);
-            return;
-        }
-
-        // 🕒 Creamos el temporizador de 3 segundos
-        const delayDebounce = setTimeout(() => {
-            ClassifyController.getProducts(inputProduct)
-            .then((resp: any) => setProducts(resp))
-            .catch((err) => console.error("❌ Error al buscar productos:", err));
-        }, 2000);
-
-        // 🧹 Limpiamos el timeout si el usuario sigue escribiendo
-        return () => clearTimeout(delayDebounce);
-    }, [inputProduct]);
-
+    ClassifyController.getProducts(debouncedProduct,role)
+        .then((resp: any) => setProducts(resp))
+        .catch((err) => console.error("❌ Error al buscar productos:", err));
+    }, [debouncedProduct]);
 
     // 🔹 Cuando se selecciona un producto en el buscador global
     const handleAddProduct = async (product: Product | null) => {
@@ -236,65 +206,107 @@ export default function Classify() {
     };
     
     const handleChangeSave = async (product: classifyProduct) => {
-        // 🧩 Lista de campos requeridos
-        const requiredFields: (keyof classifyProduct)[] = [
-            "name",
-            "lote",
-            "batch",
-            "quantity",
-            "origin_country",
-            "seller_country",
-            "weight",
-            "net_weight",
-            "type_weight",
-            "unit_weight",
-            "tariff_fraction",
-            "parts_number",
-            "item",
-            "limps",
-        ];
+
+    const isReviewer = role === "Reviewer";
+    const isClassifier = role === "Classifier";
+
+    // 🧠 Si no está en modo edición, pero el clasificador está continuando la revisión, permitir continuar
+    const canSaveWithoutEdit =
+        isClassifier &&
+        (product.quantity ||
+            product.net_weight ||
+            product.unit_weight ||
+            product.type_weight);
+
+        if (!product.edit && !canSaveWithoutEdit) {
+            console.log("⛔ Producto no editable en este momento");
+            return;
+        }
+
+        // 🧩 Lista de campos requeridos según rol
+        const requiredFields: (keyof classifyProduct)[] = isReviewer
+            ? [
+                "name",
+                "quantity",
+                "seller_country",
+                "weight",
+                "net_weight",
+                "type_weight",
+                "unit_weight",
+                "parts_number",
+                "item",
+                "limps",
+            ]
+            : [
+                "name",
+                "quantity",
+                "seller_country",
+                "weight",
+                "net_weight",
+                "type_weight",
+                "unit_weight",
+                "tariff_fraction",
+                "parts_number",
+                "item",
+                "limps",
+            ];
 
         // 🔍 Validar campos vacíos
         const missingFields = requiredFields.filter((field) => {
             const value = product[field];
             return (
-            value === null ||
-            value === undefined ||
-            value === "" ||
-            (typeof value === "number" && isNaN(value))
+                value === null ||
+                value === undefined ||
+                value === "" ||
+                (typeof value === "number" && isNaN(value))
             );
         });
 
         if (missingFields.length > 0) {
-            // ⚠️ Si hay campos vacíos, mostrar advertencia
             const fieldNames = missingFields.join(", ");
             await Swal.fire({
-            icon: "warning",
-            title: "Campos incompletos",
-            html: `<p>Faltan los siguientes campos:</p>
+                icon: "warning",
+                title: "Campos incompletos",
+                html: `<p>Faltan los siguientes campos:</p>
                     <p class="text-rose-600 font-semibold mt-2">${fieldNames}</p>`,
-            confirmButtonText: "Entendido",
-            confirmButtonColor: "#3085d6",
-            background: "#f9fafb",
-            color: "#1e293b",
+                confirmButtonText: "Entendido",
+                confirmButtonColor: "#3085d6",
+                background: "#f9fafb",
+                color: "#1e293b",
             });
-            return; // No continúa
+            return;
         }
 
-        // ✅ Si todo está lleno, cambiar modo edición
-        classifyDispatch({
-            type: "set-edit-data",
-            payload: { public_key: product.public_key },
-        });
+        // 💾 Guardar en PocketBase
+        const result = await ClassifyController.saveProductClassification(
+            classifyState.entrySelected,
+            product,
+            role
+        );
 
-        await Swal.fire({
-            icon: "success",
-            title: "Producto validado",
-            text: "Todos los campos están completos. Se desactivó el modo edición.",
-            confirmButtonColor: "#22c55e",
-            timer: 1500,
-            showConfirmButton: false,
-        });
+        // ✅ Manejo de respuesta
+        if (result.status === "success") {
+            classifyDispatch({
+                type: "set-edit-data",
+                payload: { public_key: product.public_key },
+            });
+
+            await Swal.fire({
+                icon: "success",
+                title: "Producto guardado",
+                text: "La información fue almacenada correctamente.",
+                confirmButtonColor: "#22c55e",
+                timer: 1500,
+                showConfirmButton: false,
+            });
+        } else {
+            await Swal.fire({
+                icon: "error",
+                title: "Error al guardar",
+                text: result.message,
+                confirmButtonColor: "#ef4444",
+            });
+        }
     };
 
     // 🔹 Eliminar producto con confirmación
@@ -334,80 +346,6 @@ export default function Classify() {
         return classifyState.products.some((p) => p.edit === true);
     };
 
-    const handleSaveAll = async () => {
-        try {
-            // 🛑 Validar si hay productos en modo edición
-            if (classifyState.products.some((p) => p.edit === true)) {
-            await Swal.fire({
-                icon: "warning",
-                title: "Edición activa",
-                text: "No puedes realizar esta acción mientras existan productos en modo edición. Guarda o confirma los cambios primero.",
-                confirmButtonColor: "#f59e0b",
-            });
-            return;
-            }
-
-            // 🧾 Validar si hay una entrada seleccionada
-            if (!classifyState.entrySelected.id) {
-            await Swal.fire({
-                icon: "warning",
-                title: "No hay entrada seleccionada",
-                text: "Selecciona una entrada antes de guardar.",
-            });
-            return;
-            }
-
-            // 💾 Confirmar acción de guardado
-            const confirm = await Swal.fire({
-            title: "¿Guardar clasificación?",
-            text: "Se crearán o actualizarán los productos en PocketBase.",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Guardar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#22c55e",
-            });
-
-            if (!confirm.isConfirmed) return;
-
-            // 🚀 Ejecutar guardado en PocketBase con los datos financieros incluidos
-            const results = await ClassifyController.saveClassificationBatch(
-            classifyState.entrySelected.id,
-            classifyState.products,
-            classifyDispatch,
-            {
-                subtotal: classifyState.entrySelected.subtotal,
-                packing_price: classifyState.entrySelected.packing_price,
-                other_price: classifyState.entrySelected.other_price,
-                total: classifyState.entrySelected.total,
-                total_limbs: classifyState.entrySelected.total_limbs,
-                net_weight_total: classifyState.entrySelected.net_weight_total,
-            }
-            );
-
-            // 📊 Resumen del resultado
-            const created = results.filter((r) => r.status === "created").length;
-            const updated = results.filter((r) => r.status === "updated").length;
-            const failed = results.filter((r) => r.status === "error").length;
-
-            await Swal.fire({
-            icon: failed > 0 ? "warning" : "success",
-            title: "Sincronización completada",
-            html: `
-                <p><b>${created}</b> productos creados</p>
-                <p><b>${updated}</b> productos actualizados</p>
-                <p><b>${failed}</b> errores</p>
-            `,
-            confirmButtonColor: "#22c55e",
-            });
-
-        } catch (error) {
-            console.error("❌ Error general al sincronizar:", error);
-            toast.error("❌ Error general al sincronizar");
-        }
-        };
-
-
     const handleCreateProduct = () =>{
         if(classifyState.products.some((p) => p.edit === true)){
             Swal.fire({
@@ -434,7 +372,7 @@ export default function Classify() {
         if (result.isConfirmed) {
             classifyDispatch({ type: "clear-all" })
             entryDispatch({ type: 'clear-state' })
-            window.location.reload
+            navigate('/dashboard')
         } else {
             return "a"
         }
@@ -442,8 +380,9 @@ export default function Classify() {
     }
 
     const renderImage = (file:any,record:Product) => {
+        if(file.length !=0){
             const lower = file[0].toLowerCase();
-            const url = pb.files.getURL(record, file);
+            const url = pb.files.getURL(record, file[0]);
     
             if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
             return (
@@ -458,7 +397,7 @@ export default function Classify() {
             if (lower.endsWith(".pdf")) {
             return (
                 <div className="flex flex-col items-center text-red-500">
-                📄 <span className="text-xs truncate w-20">{file}</span>
+                📄 <span className="text-xs truncate w-10">{file}</span>
                 </div>
             );
             }
@@ -466,242 +405,521 @@ export default function Classify() {
             if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
             return (
                 <div className="flex flex-col items-center text-blue-500">
-                📝 <span className="text-xs truncate w-20">{file}</span>
+                📝 <span className="text-xs truncate w-10">{file}</span>
                 </div>
             );
             }
     
             return (
             <div className="flex flex-col items-center text-gray-500">
-                📦 <span className="text-xs truncate w-20">{file}</span>
+                📦 <span className="text-xs truncate w-10">{file}</span>
+            </div>
+            );
+        }else{
+            return(
+                <img
+                    src={NoPhoto}
+                    alt={file}
+                    className="w-20 h-20 object-cover rounded border"
+                />
+            )
+        }
+    }
+
+    const renderPreview = (file: File | string) => {
+        // 📌 Caso 1: cuando es File del navegador
+        if (file instanceof File) {
+        const fileType = file.type;
+    
+        if (fileType.startsWith("image/")) {
+            return (
+            <img
+                src={URL.createObjectURL(file)}
+                alt={file.name}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+    
+        if (fileType === "application/pdf") {
+            return <span className="text-red-500 text-2xl">📄</span>;
+        }
+    
+        if (
+            fileType.includes("word") ||
+            fileType.includes("officedocument") ||
+            fileType.includes("msword")
+        ) {
+            return <span className="text-blue-500 text-2xl">📝</span>;
+        }
+    
+        return <span className="text-gray-500 text-2xl">📦</span>;
+        }
+    
+        // 📌 Caso 2: cuando es string desde PocketBase
+        if (typeof file === "string") {
+        const lower = file.toLowerCase();
+    
+        // ⚠️ Aquí necesitas el record completo, no solo el id
+        const record = classifyState.entrySelected; // o el producto actual
+        const url = pb.files.getURL(record, file);
+    
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
+            return (
+            <img
+                src={url}
+                alt={file}
+                className="w-20 h-20 object-cover rounded border"
+            />
+            );
+        }
+    
+        if (lower.endsWith(".pdf")) {
+            return (
+            <div className="flex flex-col items-center text-red-500">
+                📄 <span className="text-xs truncate w-20">{file}</span>
             </div>
             );
         }
+    
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+            return (
+            <div className="flex flex-col items-center text-blue-500">
+                📝 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+            );
+        }
+    
+        return (
+            <div className="flex flex-col items-center text-gray-500">
+            📦 <span className="text-xs truncate w-20">{file}</span>
+            </div>
+        );
+        }
+    
+    
+        return null;
+    };
+
+    const handleSaveClassification = async () => {
+    try {
+        if (!classifyState.entrySelected.id) {
+            await Swal.fire({
+                icon: "warning",
+                title: "No hay entrada seleccionada",
+                text: "Selecciona una entrada antes de continuar.",
+            });
+            return;
+        }
+
+        const confirm = await Swal.fire({
+            title: "¿Finalizar clasificación?",
+            text: "Esta acción marcará la entrada como completamente clasificada. Solo se puede realizar si la revisión fue completada.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Finalizar clasificación",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#16a34a",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        const result = await ClassifyController.finalizeClassification(classifyState.entrySelected.id,classifyState.products);
+
+        if (result.status === "success") {
+            await Swal.fire({
+                icon: "success",
+                title: "Clasificación completada",
+                text: result.message,
+                confirmButtonColor: "#22c55e",
+                timer: 1500,
+                showConfirmButton: false,
+            });
+        } else {
+            await Swal.fire({
+                icon: result.status === "warning" ? "warning" : "error",
+                title: "Atención",
+                text: result.message,
+                confirmButtonColor: "#f59e0b",
+            });
+        }
+    } catch (error) {
+        console.error("❌ Error al finalizar clasificación:", error);
+        toast.error("Error al finalizar clasificación");
+    }
+    };
+
+    const handleSaveReview = async () => {
+        try {
+            if (!classifyState.entrySelected.id) {
+                await Swal.fire({
+                    icon: "warning",
+                    title: "No hay entrada seleccionada",
+                    text: "Selecciona una entrada antes de continuar.",
+                });
+                return;
+            }
+
+            const confirm = await Swal.fire({
+                title: "¿Finalizar revisión?",
+                text: "Una vez finalizada la revisión, esta entrada pasará a la siguiente etapa del proceso.",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Finalizar revisión",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#4f46e5",
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            const result = await ClassifyController.finalizeReview(classifyState.entrySelected.id,classifyState.products);
+
+            if (result.status === "success") {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Revisión completada",
+                    text: result.message,
+                    confirmButtonColor: "#22c55e",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                await Swal.fire({
+                    icon: result.status === "warning" ? "warning" : "error",
+                    title: "Atención",
+                    text: result.message,
+                    confirmButtonColor: "#f59e0b",
+                });
+            }
+        } catch (error) {
+            console.error("❌ Error al finalizar revisión:", error);
+            toast.error("Error al finalizar revisión");
+        }
+    };
+
+    const handleFinishEntry = async () => {
+        const confirm = await Swal.fire({
+            icon: "question",
+            title: "¿Finalizar entrada?",
+            text: "Esta acción marcará la entrada como finalizada (estatus 'Finished').",
+            showCancelButton: true,
+            confirmButtonText: "Sí, finalizar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#7c3aed",
+            cancelButtonColor: "#9ca3af",
+            background: "#f9fafb",
+            color: "#1e293b",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+            const result = await ClassifyController.finalizeEntry(classifyState.entrySelected.id);
+
+            if (result.status === "success") {
+                await Swal.fire({
+                    icon: "success",
+                    title: "Entrada finalizada",
+                    text: result.message,
+                    confirmButtonColor: "#22c55e",
+                });
+
+                // 🧹 Limpiar estados globales y volver al dashboard
+                classifyDispatch({ type: "clear-all" });
+                entryDispatch({ type: "clear-state" });
+                navigate("/dashboard");
+                return; // 🔙 Finaliza la ejecución tras limpiar y navegar
+            }
+
+            if (result.status === "warning") {
+                await Swal.fire({
+                    icon: "warning",
+                    title: "Atención",
+                    text: result.message,
+                    confirmButtonColor: "#f59e0b",
+                });
+            } else {
+                await Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: result.message,
+                    confirmButtonColor: "#ef4444",
+                });
+            }
+        } catch (err: any) {
+            console.error("❌ Error al finalizar entrada:", err);
+            await Swal.fire({
+                icon: "error",
+                title: "Error inesperado",
+                text: "Ocurrió un problema al intentar finalizar la entrada.",
+                confirmButtonColor: "#ef4444",
+            });
+        }
+    };
 
     return (
         <div className=' w-screen h-screen flex flex-row dark:bg-gray-500 ' >
-            <MenuComponent />
             <div className="text-center bg-cyan-50/50 dark:bg-slate-800 p-5 min-h-screen overflow-x-auto">
-                <div className="mt-6 flex gap-5">
-                    <button
-                        onClick={()=>handleSaveAll()}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
-                    >
-                        Guardar Clasificación
-                    </button>
-                    <button
-                        onClick={()=>{ handleReturn() }}
-                        className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
-                    >
-                        Salir
-                    </button>
-                    
-                </div>
                 <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 mb-8">
-                {/* 🖼️ Logo */}
-                <div className="flex justify-center mb-6">
-                    <img src={ArnLogo} className="w-[150px]" alt="Arnian Logo" />
+                    {/* 🖼️ Logo */}
+                    <div className="flex justify-center mb-6">
+                        <img src={ArnLogo} alt="Arnian Logo" className="w-[150px]" />
+                    </div>
+
+                    {/* 📄 Encabezado de entrada */}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                        Datos generales de la entrada
+                    </h3>
+
+                    {/* 🧾 Campos generales */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {[
+                        { label: t("Entrys.form.pkey"), value: classifyState.entrySelected.public_key },
+                        { label: "TAX ID", value: classifyState.entrySelected.id_tax },
+                        { label: t("Entrys.form.invoice"), value: classifyState.entrySelected.invoice_number },
+                        {
+                            label: t("Entrys.form.supplier"),
+                            value: suppliers.find((s) => s.id === classifyState.entrySelected.id_supplier)?.name || "",
+                        },
+                        {
+                            label: t("Entrys.form.client"),
+                            value: clients.find((c) => c.id === classifyState.entrySelected.id_client)?.name || "",
+                        },
+                        { label: t("Entrys.form.created"), value: classifyState.entrySelected.created },
+                        ].map(({ label, value }, i) => (
+                        <TextField
+                            key={i}
+                            variant="filled"
+                            sx={inputText}
+                            label={label}
+                            value={value}
+                            InputProps={{ readOnly: true }}
+                            fullWidth
+                        />
+                        ))}
+                    </div>
+
+                    {/* 📎 Archivos adjuntos */}
+                    {Array.isArray(classifyState.entrySelected?.file) && classifyState.entrySelected.file.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-8">
+                            {classifyState.entrySelected.file.map((file: File) => (
+                            <div
+                                key={file.name || file.toString()}
+                                className="flex flex-col items-center justify-center border rounded-lg p-1 bg-gray-50 hover:bg-gray-100 text-center dark:text-black"
+                            >
+                                <div
+                                className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 p-1"
+                                onClick={() =>
+                                    window.open(pb.files.getURL(classifyState.entrySelected, file.toString()))
+                                }
+                                >
+                                {renderPreview(file)}
+                                <span className="mt-2 text-xs truncate w-24">{file.toString()}</span>
+                                </div>
+                            </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* 💰 Totales financieros */}
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                        Totales financieros
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {[
+                        {
+                            label: "Subtotal",
+                            value: classifyState.entrySelected.subtotal?.toFixed(2) || "0.00",
+                            readOnly: true,
+                        },
+                        {
+                            label: "Precio embalaje",
+                            value: classifyState.entrySelected.packing_price ?? 0,
+                            onChange: (e: any) =>
+                            classifyDispatch({
+                                type: "update-entry-financials",
+                                payload: { packing_price: Number(e.target.value) },
+                            }),
+                        },
+                        {
+                            label: "Otros costos",
+                            value: classifyState.entrySelected.other_price ?? 0,
+                            onChange: (e: any) =>
+                            classifyDispatch({
+                                type: "update-entry-financials",
+                                payload: { other_price: Number(e.target.value) },
+                            }),
+                        },
+                        {
+                            label: "Total general",
+                            value: (
+                            (classifyState.entrySelected.subtotal ?? 0) +
+                            (classifyState.entrySelected.packing_price ?? 0) +
+                            (classifyState.entrySelected.other_price ?? 0)
+                            ).toFixed(2),
+                            readOnly: true,
+                        },
+                        ].map(({ label, value, onChange, readOnly }, i) => (
+                        <TextField
+                            key={i}
+                            variant="filled"
+                            type={onChange ? "number" : "text"}
+                            label={label}
+                            value={value}
+                            onChange={onChange}
+                            InputProps={{ readOnly: readOnly ?? false }}
+                            sx={inputText}
+                            fullWidth
+                        />
+                        ))}
+                    </div>
                 </div>
-
-                {/* 📄 Encabezado de entrada */}
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                    Datos generales de la entrada
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.pkey")}
-                    value={classifyState.entrySelected.public_key}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label="TAX ID"
-                    value={classifyState.entrySelected.id_tax}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.invoice")}
-                    value={classifyState.entrySelected.invoice_number}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.supplier")}
-                    value={suppliers.find((s) => s.id === classifyState.entrySelected.id_supplier)?.name || ""}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.client")}
-                    value={clients.find((c) => c.id === classifyState.entrySelected.id_client)?.name || ""}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    sx={inputText}
-                    label={t("Entrys.form.created")}
-                    value={classifyState.entrySelected.created}
-                    InputProps={{ readOnly: true }}
-                    fullWidth
-                    />
-                </div>
-
-                {/* 💰 Totales financieros */}
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                    Totales financieros
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <TextField
-                    variant="filled"
-                    label="Subtotal"
-                    value={classifyState.entrySelected.subtotal?.toFixed(2) || "0.00"}
-                    InputProps={{ readOnly: true }}
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Precio embalaje"
-                    type="number"
-                    value={classifyState.entrySelected.packing_price ?? 0}
-                    onChange={(e) =>
-                        classifyDispatch({
-                        type: "update-entry-financials",
-                        payload: { packing_price: Number(e.target.value) },
-                        })
-                    }
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Otros costos"
-                    type="number"
-                    value={classifyState.entrySelected.other_price ?? 0}
-                    onChange={(e) =>
-                        classifyDispatch({
-                        type: "update-entry-financials",
-                        payload: { other_price: Number(e.target.value) },
-                        })
-                    }
-                    sx={inputText}
-                    fullWidth
-                    />
-                    <TextField
-                    variant="filled"
-                    label="Total general"
-                    value={(
-                        (classifyState.entrySelected.subtotal ?? 0) +
-                        (classifyState.entrySelected.packing_price ?? 0) +
-                        (classifyState.entrySelected.other_price ?? 0)
-                    ).toFixed(2)}
-                    InputProps={{ readOnly: true }}
-                    sx={inputText}
-                    fullWidth
-                    />
-                </div>
-                </div>
-
 
                 <hr className="my-4" />
-
                 {/* 🔍 BUSCADOR GLOBAL DE PRODUCTOS */}
-                <div className="flex justify-center mb-6">
-                    <Autocomplete
-                    disablePortal
-                    disabled={isAvaibleToEdit()}
-                    sx={{ width: 500 }}
-                    options={products}
-                    inputValue={inputProduct}
-                    getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
-                    onInputChange={(_, value) => setInputProduct(value)}
-                    onChange={(_, value) => handleAddProduct(value)}
-                    renderOption={(props, option) => (
-                        <li
-                        {...props}
-                        key={option.id}
-                        className="
-                            flex items-center gap-4 w-full px-4 py-3
-                            rounded-lg border border-gray-200
-                            bg-white
-                            hover:bg-gray-100 dark:hover:bg-slate-700
-                            dark:hover:text-gray-200
-                            hover:shadow-md transition-all duration-200 cursor-pointer
-                        "
+                <UserPermissions permission="addProduct" role={role}>
+                    <div className="flex justify-center mb-6">
+                        <Autocomplete
+                        disablePortal
+                        disabled={isAvaibleToEdit()}
+                        sx={{ width: 500 }}
+                        options={products}
+                        inputValue={inputProduct}
+                        getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
+                        onInputChange={(_, value) => setInputProduct(value)}
+                        onChange={(_, value) => handleAddProduct(value)}
+                        renderOption={(props, option) => (
+                            <li
+                            {...props}
+                            key={option.id}
+                            className="
+                                flex items-center gap-4 w-full px-4 py-3
+                                rounded-lg border border-gray-200
+                                bg-white
+                                hover:bg-gray-100 dark:hover:bg-slate-700
+                                dark:hover:text-gray-200
+                                hover:shadow-md transition-all duration-200 cursor-pointer
+                            "
+                            >
+                            {/* 🖼️ Imagen */}
+                            <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                                {renderImage(option.files, option)}
+                            </div>
+
+                            {/* 🧾 Info */}
+                            <div className="flex flex-col flex-grow min-w-0">
+                                <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
+                                Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
+                                </span>
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                                Precio: ${Number(option.unit_price || 0).toFixed(2)}
+                                </span>
+                            </div>
+                            </li>
+                        )}
+                        renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
+                        />
+                        <button 
+                            onClick={()=>{ handleCreateProduct() }}
+                            className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
+                        > <FaPlusSquare /> </button>
+
+                    </div>
+                </UserPermissions>
+                <div className="mt-6 flex gap-5">
+                    <UserPermissions permission="saveReview" role={role} >
+                        {
+                            classifyState.entrySelected.is_reviewed? (<></>):(
+                                <button
+                                    onClick={() => handleSaveReview()}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                                >
+                                    Finalizar Revisión
+                                </button>
+                            )
+                        }
+                    </UserPermissions>
+
+                    <UserPermissions permission="saveClassify" role={role}>
+                        { classifyState.entrySelected.is_classify? (<></>):(
+                            <button
+                                onClick={() => handleSaveClassification()}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                            >
+                                Finalizar Clasificación
+                            </button>
+                        ) }
+                    </UserPermissions>
+
+                    <UserPermissions permission="cancelProcess" role={role} >
+                        <button
+                            onClick={()=>{ handleReturn() }}
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                         >
-                        {/* 🖼️ Imagen */}
-                        <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
-                            {renderImage(option.files, option)}
-                        </div>
-
-                        {/* 🧾 Info */}
-                        <div className="flex flex-col flex-grow min-w-0">
-                            <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
-                            Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
-                            </span>
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                            Precio: ${Number(option.unit_price || 0).toFixed(2)}
-                            </span>
-                        </div>
-                        </li>
-                    )}
-                    renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
-                    />
-                    <button 
-                        onClick={()=>{ handleCreateProduct() }}
-                        className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
-                    > <FaPlusSquare /> </button>
-
+                            Salir
+                        </button>
+                    </UserPermissions>
+                    {
+                        classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed? (
+                            <UserPermissions permission="closeClassify" role={role} >
+                                <button
+                                    onClick={()=>{ handleFinishEntry() }}
+                                    className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
+                                >
+                                    Finalizar entrada
+                                </button>
+                            </UserPermissions>
+                        ):(<></>)
+                    }
                 </div>
-
                 {/* 🧾 TABLA DE PRODUCTOS */}
                 <div className="bg-white dark:bg-slate-900 rounded-md p-4 shadow-md overflow-x-auto min-h-110">
                     <table className="w-full border-collapse min-w-[1000px]">
                     <thead className="border-b-2 border-gray-300 dark:border-gray-600">
                         <tr>
                         {[
-                            `${t("Classify.list.lblOptions")}`,
-                            `${t("Classify.list.lblProduct")}`,
-                            `${t("Classify.list.lblLot")}`,
-                            `${t("Classify.list.lblBatch")}`,
-                            `${t("Classify.list.lblQuantity")}`,
-                            `${t("Classify.list.lblUnit_price")}`,
-                            `${t("Classify.list.lblTotalValue")}`,
-                            `${t("Classify.list.lblSupplier")}`,
-                            `${t("Classify.list.lblCountry_origin")}`,
-                            `${t("Classify.list.lblSeller_country")}`,
-                            `${t("Classify.list.lblGross_weight")}`,
-                            `${t("Classify.list.lblNet_weight")}`,
-                            `${t("Classify.list.lblUnit_weight")}`,
-                            `${t("Classify.list.lblDamage")}`,
-                            `${t("Classify.list.lblBrand")}`,
-                            `${t("Classify.list.lblModel")}`,
-                            `${t("Classify.list.lblNo_Series")}`,
-                            `${t("Classify.list.lblUnit_measurement")}`,
-                            `${t("Classify.list.lblFractionMX")}`,
-                            `${t("Classify.list.lblParty")}`,
-                            `${t("Classify.list.lblItem")}`,
-                            `${t("Classify.list.lblLumps")}`,
+                        t("Classify.list.lblOptions"),
+                        t("Classify.list.lblProduct"),
+                        ...(
+                        ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase())
+                            ? [
+                                t("Classify.list.lblLot"),
+                                t("Classify.list.lblBatch"),
+                            ]
+                            : []
+                        ),
+                        t("Classify.list.lblQuantity"),
+                        t("Classify.list.lblUnit_price"),
+                        t("Classify.list.lblTotalValue"),
+                        t("Classify.list.lblSupplier"),
+                        t("Classify.list.lblCountry_origin"),
+                        t("Classify.list.lblSeller_country"),
+                        t("Classify.list.lblGross_weight"),
+                        t("Classify.list.lblNet_weight"),
+                        t("Classify.list.lblUnit_weight"),
+                        t("Classify.list.lblDamage"),
+                        t("Classify.list.lblBrand"),
+                        t("Classify.list.lblModel"),
+                        t("Classify.list.lblNo_Series"),
+                        t("Classify.list.lblUnit_measurement"),
+                        ...(
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase())
+                            ? [
+                                t("Classify.list.lblFractionMX"),
+                                t("Classify.list.lblDesc"),
+                            ]
+                            : []
+                        ),
+                        t("Classify.list.lblParty"),
+                        t("Classify.list.lblItem"),
+                        t("Classify.list.lblLumps"),
                         ].map((h) => (
-                            <th key={h} className={thHead}>
+                        <th key={h} className={thHead}>
                             {h}
-                            </th>
+                        </th>
                         ))}
                         </tr>
                     </thead>
@@ -720,14 +938,19 @@ export default function Classify() {
                             className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
                             >
                             <td className={thBody + " flex gap-5"}>
-                                <button
-                                    onClick={() => handleChangeSave(p)}
-                                    className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
-                                >
-                                    {
-                                        p.edit? (<FaSave />) : (<MdEditSquare />)
-                                    }
-                                </button>
+
+                                {
+                                    classifyState.entrySelected.is_reviewed && role == "Reviewer" || classifyState.entrySelected.is_classify && role == "Classifier" || classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed?(<></>):(
+                                        <button
+                                            onClick={() => handleChangeSave(p)}
+                                            className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
+                                        >
+                                            {
+                                                p.edit? (<FaSave />) : (<MdEditSquare />)
+                                            }
+                                        </button>
+                                    )
+                                }
 
                                 <button
                                 onClick={() => handleRemoveProduct(p.public_key)}
@@ -749,28 +972,34 @@ export default function Classify() {
                             <td className={thBody}>{p.name || "-"}</td>
 
                             {/* Campos editables */}
-                            <td className={thBody}>
-                                <TextField
-                                variant="filled"
-                                disabled={!p.edit}
-                                name="lote"
-                                value={p.lote}
-                                sx={inputText}
-                                label={t("Classify.list.lblLot")}
-                                onChange={(e) => handleChangeInput(e, p.public_key)}
-                                />
-                            </td>
-                            <td className={thBody}>
-                                <TextField
-                                variant="filled"
-                                disabled={!p.edit}
-                                name="batch"
-                                value={p.batch}
-                                sx={inputText}
-                                label={t("Classify.list.lblBatch")}
-                                onChange={(e) => handleChangeInput(e, p.public_key)}
-                                />
-                            </td>
+                            {
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && (
+                                <td className={thBody}>
+                                    <TextField
+                                    variant="filled"
+                                    disabled={!p.edit}
+                                    name="lote"
+                                    value={p.lote}
+                                    sx={inputText}
+                                    label={t("Classify.list.lblLot")}
+                                    onChange={(e) => handleChangeInput(e, p.public_key)}
+                                    />
+                                </td>
+                            )}
+                            {
+                            ["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && (
+                                <td className={thBody}>
+                                    <TextField
+                                    variant="filled"
+                                    disabled={!p.edit}
+                                    name="batch"
+                                    value={p.batch}
+                                    sx={inputText}
+                                    label={t("Classify.list.lblBatch")}
+                                    onChange={(e) => handleChangeInput(e, p.public_key)}
+                                    />
+                                </td>
+                            )}                        
                             <td className={thBody}>
                                 <TextField
                                 variant="filled"
@@ -786,7 +1015,6 @@ export default function Classify() {
                             
                             <td className={thBody}>${Number(p.unit_price || 0).toFixed(2)}</td>
                             <td className={thBody}>${Number(p.unit_price * p.quantity || 0).toFixed(2)}</td>
-
                             <td className={thBody}>{p.supplier?.name || p.id_supplier || "-"}</td>
 
                             {/* 🌎 País de origen */}
@@ -955,19 +1183,39 @@ export default function Classify() {
                                 )}
                             />
                             </td>
-
-                            <td className={thBody}>
-                                <TextField
-                                variant="filled"
-                                disabled={!p.edit}
-                                name="tariff_fraction"
-                                type="number"
-                                value={p.tariff_fraction}
-                                sx={inputText}
-                                label={t("Classify.list.lblFractionMX")}
-                                onChange={(e) => handleChangeInput(e, p.public_key)}
-                                />
-                            </td>
+                            {["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && ( 
+                                // <UserPermissions permission="classify" role={role} >
+                                    <td className={thBody}>
+                                        <TextField
+                                        variant="filled"
+                                        disabled={!p.edit}
+                                        name="tariff_fraction"
+                                        type="text"
+                                        value={p.tariff_fraction}
+                                        sx={inputText}
+                                        label={t("Classify.list.lblFractionMX")}
+                                        onChange={(e) => handleChangeInput(e, p.public_key)}
+                                        />
+                                    </td>
+                                // </UserPermissions>
+                            )}
+                            {["classifier", "admin", "developer", "coordinator"].includes(role?.toLowerCase()) && ( 
+                                // <UserPermissions permission="classify" role={role} >
+                                    <td className={thBody}>
+                                        <TextField
+                                        variant="filled"
+                                        disabled={!p.edit}
+                                        name="description"
+                                        type="text"
+                                        value={p.description}
+                                        multiline
+                                        sx={inputText}
+                                        label={t("Classify.list.lblDesc")}
+                                        onChange={(e) => handleChangeInput(e, p.public_key)}
+                                        />
+                                    </td>
+                                // </UserPermissions>
+                            )}
                             <td className={thBody}>
                                 <TextField
                                 variant="filled"

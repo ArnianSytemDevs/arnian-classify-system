@@ -19,30 +19,55 @@ export const buildFilters = (filters?: any): string => {
   return clauses.join(" && ");
 };
 
-export const getRealtimeEntrys = async (setEntry: React.Dispatch<React.SetStateAction<any[]>>, filters?: any) => {
+export const getRealtimeEntrys = async (
+  setEntry: React.Dispatch<React.SetStateAction<any[]>>,
+  filters?: any,
+  page: number = 1,
+  perPage: number = 25
+) => {
   try {
     pb.autoCancellation(false);
+
     const filterStr = buildFilters(filters);
 
-    const list = await pb.collection("Entrys").getFullList({ filter: filterStr });
-    setEntry(list);
+    // 🔹 Carga inicial paginada (máx. 25 registros)
+    const list = await pb.collection("Entrys").getList(page, perPage, {
+      filter: filterStr,
+      sort: "-created", // 🔄 Muestra los más recientes primero
+    });
 
+    setEntry(list.items);
+
+    // 🔹 Suscripción en tiempo real
     pb.collection("Entrys").subscribe(
       "*",
-      function (e) {
+      (e) => {
         setEntry((prev) => {
-          if (e.action === "create") return [...prev, e.record];
-          if (e.action === "update") return prev.map((p) => (p.id === e.record.id ? e.record : p));
-          if (e.action === "delete") return prev.filter((p) => p.id !== e.record.id);
-          return prev;
+          switch (e.action) {
+            case "create":
+              // ✅ Inserta al inicio y mantiene máximo 25 elementos
+              return [e.record, ...prev].slice(0, perPage);
+
+            case "update":
+              return prev.map((entry) =>
+                entry.id === e.record.id ? e.record : entry
+              );
+
+            case "delete":
+              return prev.filter((entry) => entry.id !== e.record.id);
+
+            default:
+              return prev;
+          }
         });
       },
       { filter: filterStr }
     );
   } catch (error) {
-    console.error("Error en getRealtimeEntrys:", error);
+    console.error("❌ Error en getRealtimeEntrys:", error);
   }
 };
+
 
 export const unsubscribeEntry = () => {
   pb.collection("Entrys").unsubscribe("*");

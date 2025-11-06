@@ -8,36 +8,46 @@ import { createEntryRecord, updateEntryRecord } from "../../helpers/pocketbase/E
 
 export class entryFormController {
     public static async getSuppliers(nameFilter: string | undefined, mode: string) {
-        let list;
+        try {
+            let list;
 
-        if (mode === "edit" && nameFilter) {
+            if (mode === "edit" && nameFilter) {
             // Buscar por ID
             list = await getSupplierList(undefined, undefined, { id: nameFilter });
-        } else if (nameFilter) {
+            } else if (nameFilter) {
             // Buscar por nombre
             list = await getSupplierList(undefined, undefined, { name: nameFilter });
-        } else {
+            } else {
+            // 🔹 Si no hay filtros, obtener los últimos 10 creados
+            list = await getSupplierList(1, 10, {}, true); // ⬅️ usamos nuevo parámetro "latest"
+            }
+
+            return list?.items ?? [];
+        } catch (error) {
+            console.error("❌ Error en getSuppliers:", error);
             return [];
         }
-
-        return list?.items ?? [];
     }
 
-    public static async getClient(nameFilter: string | undefined, mode: string){
-        let list;
+    public static async getClient(nameFilter: string | undefined, mode: string) {
+        try {
+            let list;
 
-        if (mode === "edit" && nameFilter) {
-            // Buscar por ID
-            list = await getClientsList(undefined, undefined, { id: nameFilter });
-        } else if (nameFilter) {
-            // Buscar por nombre
-            list = await getClientsList(undefined, undefined, { name: nameFilter });
-        } else {
+            if (mode === "edit" && nameFilter && nameFilter.trim() !== "") {
+            list = await getClientsList(undefined, 10, { id: nameFilter });
+            } else if (nameFilter && nameFilter.trim() !== "") {
+            list = await getClientsList(undefined, 10, { name: nameFilter });
+            } else {
+            list = await getClientsList(1, 10, {}, true);
+            }
+
+            return list?.items ?? [];
+        } catch (error) {
+            console.error("❌ Error en getClients:", error);
             return [];
         }
-
-        return list?.items ?? [];
     }
+
 
     public static async createEntry(
     entryForm: EntryForm,
@@ -100,12 +110,12 @@ export class entryFormController {
         formData.append("is_disabled", "false");
         formData.append(
             "id_status",
-            status.find((st) => st.name === "Active")?.id || ""
+            status.find((st) => st.name === "In_review")?.id || ""
         );
 
         // ✅ Adjuntar archivos
         for (const file of fileListFormat) {
-            formData.append("files", file);
+            formData.append("file", file);
         }
 
         /* =======================================================

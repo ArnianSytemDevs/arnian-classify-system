@@ -1,24 +1,17 @@
 import { getSupplierData, getSupplierList } from "../../helpers/pocketbase/Suppliers";
 import { getClientsList } from "../../helpers/pocketbase/Clients";
-import { getUnitsData, getUnitsList } from "../../helpers/pocketbase/Units";
-import { getProduct, getProductsList } from "../../helpers/pocketbase/Products";
-import type { Product } from "../../types/collections";
-import type { Dispatch } from "react";
+import { getUnitsList } from "../../helpers/pocketbase/Units";
+import { getProductsList } from "../../helpers/pocketbase/Products";
+import type { Entry, Product } from "../../types/collections";
 import type { classifyProduct } from "../../types/forms";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-import type { ClassifyActions } from "../../reducers/classify-reducer";
-import { getMeasurementData, getMeasurementsList } from "../../helpers/pocketbase/Measurement";
+import { getMeasurementsList } from "../../helpers/pocketbase/Measurement";
+import { getStatusList } from "../../helpers/pocketbase/Status";
 /**
  * Controlador para la gestión de datos en el módulo de Clasificación.
  * Centraliza las llamadas a PocketBase y maneja los diferentes modos de consulta.
  */
 export class ClassifyController {
-    /**
-     * Obtiene proveedores desde PocketBase.
-     * @param nameFilter Texto de búsqueda o ID (dependiendo del modo).
-     * @param mode Define el modo de búsqueda: 'edit' busca por ID, cualquier otro busca por nombre.
-     * @returns Lista de proveedores coincidentes.
-     */
     public static async getSuppliers(
         nameFilter?: string,
         mode: "edit" | "search" = "search"
@@ -44,12 +37,6 @@ export class ClassifyController {
         }
     }
 
-    /**
-     * Obtiene clientes desde PocketBase.
-     * @param nameFilter Texto de búsqueda o ID (dependiendo del modo).
-     * @param mode Define el modo de búsqueda: 'edit' busca por ID, cualquier otro busca por nombre.
-     * @returns Lista de clientes coincidentes.
-     */
     public static async getClients(
         nameFilter?: string,
         mode: "edit" | "search" = "search"
@@ -75,11 +62,6 @@ export class ClassifyController {
         }
     }
 
-    /**
-     * Obtiene unidades de medida desde PocketBase.
-     * @param nameFilter Texto de búsqueda opcional.
-     * @returns Lista de unidades de medida coincidentes.
-     */
     public static async getUnits(nameFilter?: string) {
         try {
         let list;
@@ -99,11 +81,6 @@ export class ClassifyController {
         }
     }
 
-    /**
-     * Obtiene unidades de medida desde PocketBase.
-     * @param nameFilter Texto de búsqueda opcional.
-     * @returns Lista de unidades de medida coincidentes.
-     */
     public static async getMeasurement(nameFilter?: string) {
         try {
         let list;
@@ -123,10 +100,6 @@ export class ClassifyController {
         }
     }
 
-    /**
-     * Carga inicial de datos base (proveedores, clientes y unidades).
-     * Ideal para usar en un `useEffect` al montar la vista principal.
-     */
     public static async getInitialData() {
         try {
         const [suppliers, clients, units] = await Promise.all([
@@ -151,20 +124,41 @@ export class ClassifyController {
 
     }
 
-    public static async getProducts(nameFilter:string){
+    public static async getProducts(nameFilter: string, role: string) {
         try {
-            let list;
+            // 🔹 Definir los filtros base
+            const baseFilters: Record<string, any> = {
+                deprecated: false,
+                is_deleted: false,
+            };
 
-            if (nameFilter) {
-                // Filtrar por nombre parcial o exacto
-                list = await getProductsList(undefined, undefined, { name: nameFilter, deprected:false, is_deleted:false });
-            } else {
-                // Cargar todas las unidades disponibles
-                list = await getProductsList();
+            // // 🔹 Ajustar según el rol
+            // if (role === "Reviewer") {
+            //     baseFilters.is_reviwed = false;
+            // En revisión, aún no clasificados
+             // baseFilters.is_classify = false; // si deseas incluirlo aquí
+            //} else 
+            if (role === "Classifier") {
+                baseFilters.is_reviwed = true;
+                // baseFilters.is_classify = false;
             }
+
+            // 🔹 Agregar el nombre si se proporciona
+            if (nameFilter) {
+                baseFilters.name = nameFilter;
+            }
+
+            // 🔹 Ejecutar la búsqueda
+            let list;
+            if (nameFilter) {
+                list = await getProductsList(undefined, undefined, baseFilters);
+            } else {
+                list = await getProductsList(1, 10, baseFilters, true);
+            }
+
             return list?.items ?? [];
         } catch (error) {
-            console.error("❌ Error al obtener unidades de medida:", error);
+            console.error("❌ Error al obtener productos:", error);
             return [];
         }
     }
@@ -218,239 +212,454 @@ export class ClassifyController {
 
         return formatted;
     }
-
-    public static async saveClassificationBatch( entryId: string, products: classifyProduct[], classifyDispatch: Dispatch<ClassifyActions>, financialTotals?: {
-        subtotal: number;
-        packing_price: number;
-        other_price: number;
-        total: number;
-        total_limbs: number;
-        net_weight_total: number;
-    }) {
-    const readyToSave = products.filter((p) => !p.edit);
-
-    if (readyToSave.length === 0)
-        throw new Error("No hay productos listos para guardar");
-
-    const results: {
-        id: string;
-        public_key: string;
-        status: "created" | "updated" | "error";
-        error?: any;
-    }[] = [];
-
-    for (const p of readyToSave) {
+    
+    public static async saveProductClassification(entry: Entry, product: classifyProduct, role: string) {
         try {
-        // 🧠 Construir el cuerpo de datos para PocketBase
-        const data = {
-            public_key: p.public_key,
-            id_entry: entryId,
-            id_product: p.id_product,
-            lote: p.lote,
-            batch: p.batch,
-            tariff_fraction: Number(p.tariff_fraction),
-            lumps: Number(p.limps),
-            item: String(p.item),
-            comments: "",
-            damage:Boolean(p.damage),
-            origin_country: JSON.stringify(p.origin_country || {}),
-            origin_seller: JSON.stringify(p.seller_country || {}),
-            quantity: Number(p.quantity),
-            net_weight: Number(p.net_weight),
-            unit_weight:
-            typeof p.unit_weight === "object"
-                ? p.unit_weight.id
-                : p.unit_weight || null,
+            // 1️⃣ Verificar que haya una entrada seleccionada
+            if (!entry?.id) throw new Error("No hay entrada activa.");
 
-            unit_type:
-            typeof p.type_weight === "object"
-                ? p.type_weight.id
-                : p.type_weight || null,
-            partys: Number(p.parts_number) || 0,
-            field: 0 // Si tu modelo lo requiere
-        };
+            // 2️⃣ Verificar si ya existe un Entry_product vinculado
+            let entryProduct = await pb
+            .collection("Entry_products")
+            .getFirstListItem(
+                `id_entry="${entry.id}" && id_product="${product.id_product}"`,
+                { requestKey: null }
+            )
+            .catch(() => null);
 
-        let record;
-
-        // 🔍 Actualizar si existe id_pocketbase
-        if (p.id_pocketbase) {
-            record = await pb.collection("Classiffication").update(p.id_pocketbase, data);
-            results.push({ id: record.id, public_key: p.public_key, status: "updated" });
-        } else {
-            // Buscar por public_key
-            const existing = await pb.collection("Classiffication").getList(1, 1, {
-            filter: `public_key = "${p.public_key}"`,
+            // 3️⃣ Crear o actualizar Entry_product (según el rol)
+            if (!entryProduct) {
+            const newEntryProduct = await pb.collection("Entry_products").create({
+                id_entry: entry.id,
+                id_product: product.id_product,
+                ...(role === "Classifier" && {
+                is_damage: Boolean(product.damage),
+                lote: product.lote || "",
+                batch: product.batch || "",
+                }),
             });
-
-            if (existing?.items?.length > 0) {
-            record = await pb.collection("Classiffication").update(existing.items[0].id, data);
-            results.push({ id: record.id, public_key: p.public_key, status: "updated" });
-            } else {
-            record = await pb.collection("Classiffication").create(data);
-            results.push({ id: record.id, public_key: p.public_key, status: "created" });
+            entryProduct = newEntryProduct;
+            } else if (role === "Classifier") {
+            await pb.collection("Entry_products").update(entryProduct.id, {
+                is_damage: Boolean(product.damage),
+                lote: product.lote || "",
+                batch: product.batch || "",
+            });
             }
-        }
 
-        // ✅ Actualizar estado local
-        classifyDispatch({
-            type: "edit-product",
-            payload: {
-            public_key: p.public_key,
-            updatedData: {
-                synced: true,
-                syncError: null,
-                id_pocketbase: record.id,
-            },
-            },
-        });
+            // 4️⃣ Construcción del cuerpo de clasificación
+            const classificationData = {
+            public_key: product.public_key,
+            id_entry: entry.id,
+            id_product: product.id_product,
+            tariff_fraction: Number(product.tariff_fraction) || 0,
+            lumps: Number(product.limps) || 0,
+            field: 0,
+            item: String(product.item || ""),
+            description: String(product.description || ""), // 🆕 Nuevo campo editable por el clasificador
+            origin_country:
+                typeof product.origin_country === "object"
+                ? JSON.stringify(product.origin_country)
+                : product.origin_country || "",
+            origin_seller:
+                typeof product.seller_country === "object"
+                ? JSON.stringify(product.seller_country)
+                : product.seller_country || "",
+            quantity: Number(product.quantity) || 0,
+            net_weight: Number(product.net_weight) || 0,
+            partys: Number(product.parts_number) || 0,
+            unit_type:
+                typeof product.type_weight === "object"
+                ? product.type_weight.id
+                : product.type_weight || "",
+            unit_weight:
+                typeof product.unit_weight === "object"
+                ? product.unit_weight.id
+                : product.unit_weight || "",
+            deprected: false,
+            };
 
+            // 5️⃣ Crear o actualizar registro en Classification
+            const existingClassification = await pb
+            .collection("Classiffication")
+            .getFirstListItem(`public_key="${product.public_key}"`, { requestKey: null })
+            .catch(() => null);
+
+            let classificationRecord;
+
+            if (existingClassification) {
+            classificationRecord = await pb
+                .collection("Classiffication")
+                .update(existingClassification.id, classificationData);
+            } else {
+            classificationRecord = await pb
+                .collection("Classiffication")
+                .create(classificationData);
+            }
+
+            // 6️⃣ Retornar resultado unificado
+            return {
+            status: "success",
+            entryProductId: entryProduct.id,
+            classificationId: classificationRecord.id,
+            };
         } catch (error: any) {
-        console.error(`❌ Error sincronizando ${p.public_key}:`, error);
-
-        // ⚠️ Marcar error en estado local
-        classifyDispatch({
-            type: "edit-product",
-            payload: {
-            public_key: p.public_key,
-            updatedData: {
-                synced: false,
-                syncError: error.message || "Error desconocido",
-            },
-            },
-        });
-
-        results.push({
-            id: p.id_pocketbase || "",
-            public_key: p.public_key,
+            console.error("❌ Error al guardar clasificación individual:", error);
+            return {
             status: "error",
-            error,
-        });
+            message: error.message || "Error al guardar producto",
+            };
         }
     }
-
-    // ✅ Guardar datos financieros si están presentes
-    if (financialTotals) {
-        try {
-        await pb.collection("Entrys").update(entryId, {
-            subtotal: financialTotals.subtotal,
-            packing_price: financialTotals.packing_price,
-            other_price: financialTotals.other_price,
-            total: financialTotals.total,
-            total_limbs: financialTotals.total_limbs,
-            net_weight_total: financialTotals.net_weight_total,
-        });
-        } catch (err) {
-        console.error("❌ Error al guardar datos financieros de la entrada:", err);
-        }
-    }
-
-    return results;
-    }
-
-
 
     public static async getClassifyByEntry(idEntry: string): Promise<classifyProduct[]> {
-  try {
-    const list = await pb.collection("Classiffication").getFullList({
-      filter: `id_entry = "${idEntry}"`,
-      expand: "id_product,id_supplier,unit_weight,unit_type",
-    });
+        try {
+            // 1️⃣ Obtener las listas de unidades y mediciones (una sola vez)
+            const [unitsResponse, measurementsResponse] = await Promise.all([
+                getUnitsList(1, 100),
+                getMeasurementsList(1, 100),
+            ]);
 
-    if (!list || list.length === 0) return [];
+            const units = unitsResponse?.items || [];
+            const measurements = measurementsResponse?.items || [];
 
-    const formatted: classifyProduct[] = await Promise.all(
-        list.map(async (item: any) => {
-            const product = item.expand?.id_product || {};
-            const infoprod = await getProduct(item.id_product);
-            // 🧭 Unit weight y unit type
-            const unitWeightObj =
-            item.expand?.unit_weight
-                ? { id: item.expand.unit_weight.id, name: item.expand.unit_weight.name }
-                : await getMeasurementData(item.unit_weight);
+            // 2️⃣ Buscar los productos asociados a la entrada
+            const entryProducts = await pb.collection("Entry_products").getFullList({
+                filter: `id_entry.id = "${idEntry}"`,
+                expand: "id_product",
+            });
 
-            const unitTypeObj =
-            item.expand?.unit_type
-                ? { id: item.expand.unit_type.id, name: item.expand.unit_type.name }
-                : await getUnitsData(item.unit_type);
+            if (!entryProducts?.length) return [];
 
-            // 🧾 Supplier
-            const supplierObj =
-            item.expand?.id_supplier
-                ? {
-                    id: product.expand.id_supplier.id,
-                    name: product.expand.id_supplier.name,
-                    alias: product.expand.id_supplier.alias,
-                    email: product.expand.id_supplier.email,
-                    phone_number: product.expand.id_supplier.phone_number,
-                }
-                : await getSupplierData(product.id_supplier);
+            // 3️⃣ Procesar cada producto vinculado
+            const formatted = (
+                await Promise.all(
+                    entryProducts.map(async (ep: any): Promise<classifyProduct | null> => {
+                        const product = ep.expand?.id_product;
+                        if (!product) return null;
 
-            // 🗺️ Países
-            const originCountry = (() => {
-            try {
-                return typeof item.origin_country === "string"
-                ? JSON.parse(item.origin_country)
-                : item.origin_country;
-            } catch {
-                return null;
-            }
-            })();
+                        // 4️⃣ Buscar la clasificación activa (no deprecada)
+                        const classification = await pb
+                            .collection("Classiffication")
+                            .getFirstListItem(
+                                `id_product.id = "${product.id}" && deprected = false`,
+                                { expand: "id_supplier" }
+                            )
+                            .catch(() => null);
 
-            const sellerCountry = (() => {
-            try {
-                return typeof item.origin_seller === "string"
-                ? JSON.parse(item.origin_seller)
-                : item.origin_seller;
-            } catch {
-                return null;
-            }
-            })();
+                        // 5️⃣ Obtener proveedor expandido (si existe)
+                        const supplierExpand = classification?.expand?.id_supplier;
 
-            console.log("🚀 ~ ClassifyController ~ getClassifyByEntry ~ item.is_damage:", item)
-            return {
-            public_key: item.public_key,
-            id_product: item.id_product,
-            lote: item.lote || "",
-            batch: item.batch || "",
-            name: infoprod?.name || "",
-            quantity: Number(item.quantity) || 0,
-            damage:Boolean(item.damage),
+                        // 6️⃣ Buscar las unidades y mediciones desde memoria
+                        const unitType =
+                            units.find((un: any) => un.id === classification?.unit_type) || null;
+                        const unitWeight =
+                            measurements.find((ms: any) => ms.id === classification?.unit_weight) || null;
 
-            // ✅ coherente con tus reducers
-            id_supplier: supplierObj?.id || "",
-            supplier: supplierObj || null,
+                        // 7️⃣ Construir objeto formateado
+                        return {
+                            public_key: classification?.public_key || product.public_key || "",
+                            id_product: product.id,
+                            name: product.name || "",
+                            lote: ep.lote || "",
+                            batch: ep.batch || "",
+                            quantity: classification?.quantity ?? 0,
+                            id_supplier: supplierExpand?.id || product.id_supplier || "",
+                            origin_country: classification?.origin_country || "",
+                            seller_country: classification?.origin_seller || "",
+                            weight: product.weight || 0,
+                            net_weight: classification?.net_weight || 0,
 
-            origin_country: originCountry,
-            seller_country: sellerCountry,
+                            type_weight: unitType
+                                ? { id: unitType.id, name: unitType.name }
+                                : null,
 
-            weight: Number(product.weight || 0),
-            net_weight: Number(item.net_weight || 0),
+                            brand: product.brand || "",
+                            model: product.model || "",
+                            serial_number: product.serial_number || "",
+                            unit_price: product.unit_price || 0,
 
-            unit_weight: unitWeightObj || null,
-            type_weight: unitTypeObj || null,
+                            unit_weight: unitWeight
+                                ? { id: unitWeight.id, name: unitWeight.name }
+                                : null,
 
-            brand: product.brand || "",
-            model: product.model || "",
-            serial_number: product.serial_number || "",
-            unit_price: Number(product.unit_price || 0),
-            tariff_fraction: Number(item.tariff_fraction || 0),
-            parts_number: Number(item.partys || 0),
-            item: String(item.item || ""),
-            limps: Number(item.lumps || 0),
+                            tariff_fraction: classification?.tariff_fraction || 0,
+                            description: product.description || "",
+                            parts_number: classification?.partys || 0,
+                            item: classification?.item || "",
+                            limps: classification?.lumps || 0,
 
-            edit: false,
-            synced: true,
-            syncError: null,
-            id_pocketbase: item.id,
-            };
-        })
-        );
+                            supplier: supplierExpand
+                                ? {
+                                    id: supplierExpand.id,
+                                    name: supplierExpand.name,
+                                    alias: supplierExpand.alias,
+                                    email: supplierExpand.email,
+                                    phone_number: supplierExpand.phone_number,
+                                }
+                                : null,
 
-        return formatted;
-    } catch (error) {
-        console.error("❌ Error al obtener clasificaciones:", error);
-        return [];
+                            edit: false,
+                            synced: true,
+                            syncError: null,
+                            id_pocketbase: classification?.id || null,
+                            damage: Boolean(ep.is_damage),
+                        } as classifyProduct;
+                    })
+                )
+            ).filter((item): item is classifyProduct => item !== null);
+
+            return formatted;
+        } catch (error: any) {
+            console.error("❌ Error al obtener productos clasificados:", {
+                message: error.message,
+                data: error.data,
+                status: error.status,
+            });
+            return [];
+        }
     }
+
+    public static async finalizeReview(entryId: string, products: classifyProduct[]) {
+        try {
+            // 1️⃣ Obtener la entrada actual desde PocketBase
+            const entry = await pb.collection("Entrys").getOne(entryId);
+
+            if (!entry) {
+                return { status: "error", message: "Entrada no encontrada." };
+            }
+
+            // 2️⃣ Validar si ya fue revisada previamente
+            if (entry.is_reviewed) {
+                return { status: "warning", message: "La entrada ya fue revisada previamente." };
+            }
+
+            // 3️⃣ Verificar si hay productos asignados
+            if (!products || products.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar la revisión sin haber asignado productos a la entrada.",
+                };
+            }
+
+            // 4️⃣ Obtener lista de estatus y encontrar el de "In_classify"
+            const statusList: any = await getStatusList();
+            const findStatus = statusList.items?.find((st: any) => st.name === "In_classify");
+
+            if (!findStatus) {
+                return { status: "error", message: "No se encontró el estado 'In_classify' en la base de datos." };
+            }
+
+            // 5️⃣ Actualizar la entrada con el nuevo estatus y marcarla como revisada
+            await pb.collection("Entrys").update(entryId, {
+                is_reviewed: true,
+                id_status: findStatus.id,
+            });
+
+            // 6️⃣ Obtener todos los IDs de productos relacionados
+            const productIds = products
+                .filter((p) => p.id_product)
+                .map((p) => p.id_product);
+
+            if (!productIds.length) {
+                return {
+                    status: "warning",
+                    message: "No se encontraron productos válidos para marcar como revisados.",
+                };
+            }
+
+            // 7️⃣ Actualizar productos en paralelo
+            await Promise.allSettled(
+                productIds.map(async (productId) => {
+                    try {
+                        await pb.collection("Products").update(productId, { is_reviewed: true });
+                    } catch (err) {
+                        console.error(`❌ Error actualizando producto ${productId}:`, err);
+                    }
+                })
+            );
+
+            // 8️⃣ Respuesta exitosa
+            return {
+                status: "success",
+                message: "✅ Revisión finalizada correctamente. Entrada y productos marcados como revisados.",
+            };
+        } catch (error: any) {
+            console.error("❌ Error al finalizar revisión:", error);
+            return {
+                status: "error",
+                message: error.message || "Error desconocido al finalizar revisión.",
+            };
+        }
+    }
+
+    public static async finalizeClassification(entryId: string, products: classifyProduct[]) {
+        try {
+            // 1️⃣ Obtener la entrada actual desde PocketBase
+            const entry = await pb.collection("Entrys").getOne(entryId);
+
+            if (!entry) {
+                return { status: "error", message: "Entrada no encontrada." };
+            }
+
+            // 2️⃣ Validar que haya sido revisada previamente
+            if (!entry.is_reviewed) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar la clasificación sin haber revisado primero la entrada.",
+                };
+            }
+
+            // 3️⃣ Evitar reclasificación
+            if (entry.is_classify) {
+                return { status: "warning", message: "La entrada ya fue clasificada previamente." };
+            }
+
+            // 4️⃣ Validar que haya productos asignados
+            if (!products || products.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar la clasificación sin productos asignados.",
+                };
+            }
+
+            // 5️⃣ Validar que todos los productos tengan fracción, lote y batch
+            const invalidProducts = products.filter(
+                (p) =>
+                    !p.tariff_fraction ||
+                    p.tariff_fraction === 0 ||
+                    !p.lote ||
+                    p.lote.trim() === "" ||
+                    !p.batch ||
+                    p.batch.trim() === ""
+            );
+
+            if (invalidProducts.length > 0) {
+                const invalidNames = invalidProducts.map((p) => `• ${p.name || "Producto sin nombre"}`).join("<br>");
+                return {
+                    status: "warning",
+                    message: `Los siguientes productos tienen información incompleta:
+                            ${invalidNames}.
+                            Asegúrate de llenar fracción arancelaria, lote y batch antes de finalizar.`,
+                };
+            }
+
+            // 6️⃣ Obtener lista de estatus y buscar el estado "Active"
+            const statusList: any = await getStatusList();
+            const findStatus = statusList.items?.find((st: any) => st.name === "Active");
+
+            if (!findStatus) {
+                return {
+                    status: "error",
+                    message: "No se encontró el estado 'Active' en la base de datos.",
+                };
+            }
+
+            // 7️⃣ Actualizar la entrada: marcar como clasificada y cambiar el estado
+            await pb.collection("Entrys").update(entryId, {
+                is_classify: true,
+                id_status: findStatus.id,
+            });
+
+            // 8️⃣ Actualizar todos los productos relacionados
+            const productIds = products
+                .filter((p) => p.id_product)
+                .map((p) => p.id_product);
+
+            if (productIds.length) {
+                await Promise.allSettled(
+                    productIds.map(async (productId) => {
+                        try {
+                            await pb.collection("Products").update(productId, { is_classify: true });
+                        } catch (err) {
+                            console.error(`❌ Error actualizando producto ${productId}:`, err);
+                        }
+                    })
+                );
+            } else {
+                console.warn("⚠️ No se encontraron productos válidos para actualizar.");
+            }
+
+            // 9️⃣ Respuesta exitosa
+            return {
+                status: "success",
+                message: "✅ Clasificación finalizada correctamente. Entrada y productos actualizados.",
+            };
+        } catch (error: any) {
+            console.error("❌ Error al finalizar clasificación:", error);
+            return {
+                status: "error",
+                message: error.message || "Error desconocido al finalizar clasificación.",
+            };
+        }
+    }
+
+    public static async finalizeEntry(entryId: string) {
+        try {
+            // 1️⃣ Obtener la entrada actual desde PocketBase
+            const entry = await pb.collection("Entrys").getOne(entryId);
+
+            if (!entry) {
+                return { status: "error", message: "Entrada no encontrada." };
+            }
+
+            // 2️⃣ Obtener lista de estatus y validar que existan los relevantes
+            const statusList: any = await getStatusList();
+            const finishedStatus = statusList.items?.find((st: any) => st.name === "Finished");
+            const activeStatus = statusList.items?.find((st: any) => st.name === "Active");
+
+            if (!finishedStatus || !activeStatus) {
+                return {
+                    status: "error",
+                    message: "No se encontraron los estados 'Finished' o 'Active' en la base de datos.",
+                };
+            }
+
+            // 3️⃣ Verificar que la entrada esté en estado "Active" antes de finalizar
+            if (entry.id_status !== activeStatus.id) {
+                return {
+                    status: "warning",
+                    message: "Solo se pueden finalizar entradas que estén en estado 'Active'.",
+                };
+            }
+
+            // 4️⃣ Verificar que la entrada tenga productos asignados
+            const assignedProducts = await pb.collection("Entry_products").getFullList({
+                filter: `id_entry.id = "${entryId}"`,
+            });
+
+            if (!assignedProducts || assignedProducts.length === 0) {
+                return {
+                    status: "warning",
+                    message: "No puedes finalizar una entrada sin productos asignados.",
+                };
+            }
+
+            // 5️⃣ Verificar si ya tiene el estatus 'Finished'
+            if (entry.id_status === finishedStatus.id) {
+                return {
+                    status: "warning",
+                    message: "La entrada ya se encuentra marcada como finalizada.",
+                };
+            }
+
+            // 6️⃣ Actualizar el estado de la entrada a 'Finished'
+            await pb.collection("Entrys").update(entryId, {
+                id_status: finishedStatus.id,
+            });
+
+            // 7️⃣ Respuesta exitosa
+            return {
+                status: "success",
+                message: "✅ Entrada finalizada correctamente (estatus 'Finished').",
+            };
+        } catch (error: any) {
+            console.error("❌ Error al finalizar entrada:", error);
+            return {
+                status: "error",
+                message: error.message || "Error desconocido al finalizar la entrada.",
+            };
+        }
     }
 
 }

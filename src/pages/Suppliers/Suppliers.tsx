@@ -8,10 +8,12 @@ import type { Status } from "../../types/collections";
 import { SuppliersController } from "./Suppliers.controller";
 import SuppliersForm from "../../components/Formularios/SuppliersForm";
 import SuppliersList from "../../components/Listas/SupplierList";
+import { checkRole } from "../../hooks/usePremission.controller";
+import UserPermissions from "../../hooks/usePremission";
 
 export default function Suppliers() {
   const { t } = useTranslation();
-  const { suppliersState, suppliersDispatch } = useClassifyContext();
+  const { suppliersState, suppliersDispatch,role,setRole } = useClassifyContext();
   const [mode, setMode] = useState("");
   const [status, setStatus] = useState<Status[]>([]);
   const [option, setOption] = useState(1);
@@ -33,6 +35,14 @@ export default function Suppliers() {
     SuppliersController.getStatus().then((resp: any) => {
       setStatus(resp);
     });
+  }, []);
+
+  useEffect(() => {
+      const getRole = async () => {
+          const userRole = await checkRole();
+          setRole(userRole);
+      };
+      getRole();
   }, []);
 
   // ============================================================
@@ -92,51 +102,57 @@ export default function Suppliers() {
         </button>
 
         <br />
-        <button
-          onClick={() => {
-            setOpen(true);
-            setMode("create");
-          }}
-          className={option === 2 ? btnSelected : btnUnselected}
-        >
-          <MdCreateNewFolder className="text-md" /> {t("Suppliers.btnCreate", { defaultValue: "Nuevo" })}
-        </button>
+        <UserPermissions permission='createSuppliers' role={role} >
+          <button
+            onClick={() => {
+              setOpen(true);
+              setMode("create");
+            }}
+            className={option === 2 ? btnSelected : btnUnselected}
+          >
+            <MdCreateNewFolder className="text-md" /> {t("Suppliers.btnCreate", { defaultValue: "Nuevo" })}
+          </button>
+        </UserPermissions>
 
         <br />
-        <button
-          disabled={
-            suppliersState.supplierList.length > 1 ||
-            suppliersState.supplierList.length === 0
-          }
-          onClick={() => {
-            setMode("edit");
-            suppliersDispatch({ type: "edit-supplier" });
-            setOpen(true);
-          }}
-          className={
-            suppliersState.supplierList.length > 1 ||
-            suppliersState.supplierList.length === 0
-              ? btnDisabled
-              : option === 3
-              ? btnSelected
-              : btnUnselected
-          }
-        >
-          <MdEditSquare className="text-md" /> {t("Suppliers.btnUpdate", { defaultValue: "Editar" })}
-        </button>
+        <UserPermissions permission='editSuppliers' role={role} >
+          <button
+            disabled={
+              suppliersState.supplierList.length > 1 ||
+              suppliersState.supplierList.length === 0
+            }
+            onClick={() => {
+              setMode("edit");
+              suppliersDispatch({ type: "edit-supplier" });
+              setOpen(true);
+            }}
+            className={
+              suppliersState.supplierList.length > 1 ||
+              suppliersState.supplierList.length === 0
+                ? btnDisabled
+                : option === 3
+                ? btnSelected
+                : btnUnselected
+            }
+          >
+            <MdEditSquare className="text-md" /> {t("Suppliers.btnUpdate", { defaultValue: "Editar" })}
+          </button>
+        </UserPermissions>
 
         <br />
-        <button
-          disabled={suppliersState.supplierList.length <= 0}
-          onClick={handleDeleteSupplier}
-          className={
-            suppliersState.supplierList.length === 0
-              ? btnDisabled
-              : btnUnselected
-          }
-        >
-          <FaTrashAlt className="text-md" /> {t("Suppliers.btnDelete", { defaultValue: "Eliminar" })}
-        </button>
+        <UserPermissions permission='deleteSuppliers' role={role} >
+          <button
+            disabled={suppliersState.supplierList.length <= 0}
+            onClick={handleDeleteSupplier}
+            className={
+              suppliersState.supplierList.length === 0
+                ? btnDisabled
+                : btnUnselected
+            }
+          >
+            <FaTrashAlt className="text-md" /> {t("Suppliers.btnDelete", { defaultValue: "Eliminar" })}
+          </button>
+        </UserPermissions>
 
         <br />
       </div>

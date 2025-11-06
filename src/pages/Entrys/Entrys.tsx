@@ -10,12 +10,14 @@ import EntryForm from '../../components/Formularios/EntryForm';
 import { EntrysController } from './Entrys.controller';
 import { useNavigate } from 'react-router';
 import { FaSearchDollar } from "react-icons/fa";
+import { checkRole } from '../../hooks/usePremission.controller';
+import UserPermissions from '../../hooks/usePremission';
 
 export default function Products() {
 
     const navigate = useNavigate()
     const { t } = useTranslation();
-    const { entryState,classifyDispatch } = useClassifyContext();
+    const { entryState,classifyDispatch,role,setRole } = useClassifyContext();
     const [mode, setMode] = useState("create");
     const [status, setStatus] = useState<Status[]>([]);
     const [option, setOption] = useState(1);
@@ -32,6 +34,14 @@ export default function Products() {
         EntrysController.getStatus().then((resp: any) => {
             setStatus(resp);
         });
+    }, []);
+
+    useEffect(() => {
+        const getRole = async () => {
+            const userRole = await checkRole();
+            setRole(userRole);
+        };
+        getRole();
     }, []);
 
     /** 🔹 Eliminar registros seleccionados */
@@ -68,51 +78,55 @@ export default function Products() {
                 </button>
 
                 <br />
-                <button
-                    onClick={() => {
-                        setOpen(true);
-                        setMode("create");
-                    }}
-                    className={option === 2 ? btnSelected : btnUnselected}
-                >
-                    <MdCreateNewFolder className="text-md" /> {t("Entrys.btnCreate")}
-                </button>
+                <UserPermissions permission='createEntry' role={role} >
+                    <button
+                        onClick={() => {
+                            setOpen(true);
+                            setMode("create");
+                        }}
+                        className={option === 2 ? btnSelected : btnUnselected}
+                    >
+                        <MdCreateNewFolder className="text-md" /> {t("Entrys.btnCreate")}
+                    </button>
+                </UserPermissions>
 
                 <br />
-                <button
-                    disabled={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
-                    }
-                    onClick={() => {
-                        setOpen(true);
-                        setMode("edit");
-                    }}
-                    className={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
-                            ? btnDisabled
-                            : option === 3
-                            ? btnSelected
-                            : btnUnselected
-                    }
-                >
-                    <MdEditSquare className="text-md" /> {t("Entrys.btnUpdate")}
-                </button>
-
+                <UserPermissions permission='editEntry' role={role} >
+                    <button
+                        disabled={
+                            entryState.entryList.length > 1 ||
+                            entryState.entryList.length === 0
+                        }
+                        onClick={() => {
+                            setOpen(true);
+                            setMode("edit");
+                        }}
+                        className={
+                            entryState.entryList.length > 1 ||
+                            entryState.entryList.length === 0
+                                ? btnDisabled
+                                : option === 3
+                                ? btnSelected
+                                : btnUnselected
+                        }
+                    >
+                        <MdEditSquare className="text-md" /> {t("Entrys.btnUpdate")}
+                    </button>
+                </UserPermissions>
                 <br />
-                <button
-                    disabled={entryState.entryList.length <= 0}
-                    onClick={handleDeleteEntry} // ✅ Ejecuta la función correctamente
-                    className={
-                        entryState.entryList.length === 0
-                            ? btnDisabled
-                            : btnUnselected
-                    }
-                >
-                    <FaTrashAlt className="text-md" /> {t("Entrys.btnDelete")}
-                </button>
-
+                <UserPermissions permission='deleteEntry' role={role} >
+                    <button
+                        disabled={entryState.entryList.length <= 0}
+                        onClick={handleDeleteEntry} // ✅ Ejecuta la función correctamente
+                        className={
+                            entryState.entryList.length === 0
+                                ? btnDisabled
+                                : btnUnselected
+                        }
+                    >
+                        <FaTrashAlt className="text-md" /> {t("Entrys.btnDelete")}
+                    </button>
+                </UserPermissions>
                 <br />
                 <button
                     disabled={
@@ -135,7 +149,7 @@ export default function Products() {
                             : btnUnselected
                     }
                 >
-                    <FaSearchDollar className="text-md" /> {t("Classify.btnStart")}
+                    <FaSearchDollar className="text-md" /> { role == "Reviewer"? t("Classify.btnReview") : t("Classify.btnStart")  }
                 </button>
             </div>
 

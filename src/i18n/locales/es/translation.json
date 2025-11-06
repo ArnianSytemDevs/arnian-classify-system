@@ -44,6 +44,7 @@
         "btnDelete":"Eliminar clasificacion",
         "btnGet":"Lista clasificacion",
         "btnStart":"Iniciar clasificacion",
+        "btnReview":"Iniciar revision",
         "lblProd":"Buscar y agregar producto",
         "list":{
             "lblOptions":"Opciones",
@@ -67,7 +68,9 @@
             "lblItem":"Item",
             "lblLumps":"Bultos",
             "lblTotalValue":"Valor total",
-            "lblDamage":"Dañado?"
+            "lblDamage":"Dañado?",
+            "lblDesc":"Descripcion",
+            "public_key":"Numero de carga"
         }
     },
     "Users":{
