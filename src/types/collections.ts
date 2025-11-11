@@ -168,6 +168,9 @@ export type Entry_products = {
     id_entry:string;
     id_product:string;
     is_damage:boolean;
+    is_outrank:boolean;
+    is_shortage:boolean;
+    unit_price: number;
     lote: string;
     batch: string;
     created: string;

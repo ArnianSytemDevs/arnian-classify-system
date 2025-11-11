@@ -7,10 +7,7 @@ import type { classifyProduct } from "../../types/forms";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { getMeasurementsList } from "../../helpers/pocketbase/Measurement";
 import { getStatusList } from "../../helpers/pocketbase/Status";
-/**
- * Controlador para la gestión de datos en el módulo de Clasificación.
- * Centraliza las llamadas a PocketBase y maneja los diferentes modos de consulta.
- */
+
 export class ClassifyController {
     public static async getSuppliers(
         nameFilter?: string,
@@ -185,7 +182,7 @@ export class ClassifyController {
             tariff_fraction: 0,
             parts_number: 0,
             item: "",
-            limps: 0,
+            lumps: 0,
         };
 
         try {
@@ -213,7 +210,7 @@ export class ClassifyController {
         return formatted;
     }
     
-    public static async saveProductClassification(entry: Entry, product: classifyProduct, role: string) {
+    public static async saveProductClassification(entry: Entry, product: classifyProduct) {
         try {
             // 1️⃣ Verificar que haya una entrada seleccionada
             if (!entry?.id) throw new Error("No hay entrada activa.");
@@ -228,35 +225,35 @@ export class ClassifyController {
             .catch(() => null);
 
             // 3️⃣ Crear o actualizar Entry_product (según el rol)
+            const entryProductData = {
+            id_entry: entry.id,
+            id_product: product.id_product,
+            unit_price: Number(product.unit_price) || 0,
+            is_damage: Boolean(product.damage),
+            is_outrank: Boolean(product.is_outrank),
+            is_shortage: Boolean(product.is_shortage),
+            lote: product.lote || "",
+            batch: product.batch || "",
+            };
+
             if (!entryProduct) {
-            const newEntryProduct = await pb.collection("Entry_products").create({
-                id_entry: entry.id,
-                id_product: product.id_product,
-                ...(role === "Classifier" && {
-                is_damage: Boolean(product.damage),
-                lote: product.lote || "",
-                batch: product.batch || "",
-                }),
-            });
-            entryProduct = newEntryProduct;
-            } else if (role === "Classifier" || role === "Developer") {
-            await pb.collection("Entry_products").update(entryProduct.id, {
-                is_damage: Boolean(product.damage),
-                lote: product.lote || "",
-                batch: product.batch || "",
-            });
+            entryProduct = await pb.collection("Entry_products").create(entryProductData);
+            } else {
+            await pb.collection("Entry_products").update(entryProduct.id, entryProductData);
             }
+
 
             // 4️⃣ Construcción del cuerpo de clasificación
             const classificationData = {
             public_key: product.public_key,
             id_entry: entry.id,
             id_product: product.id_product,
-            tariff_fraction: Number(product.tariff_fraction) || 0,
-            lumps: Number(product.limps) || 0,
+            tariff_fraction: product.tariff_fraction || 0,
+            lumps: Number(product.lumps) || 0,
             field: 0,
             item: String(product.item || ""),
             description: String(product.description || ""), // 🆕 Nuevo campo editable por el clasificador
+            comments: String(product.comments||""),
             origin_country:
                 typeof product.origin_country === "object"
                 ? JSON.stringify(product.origin_country)
@@ -300,7 +297,7 @@ export class ClassifyController {
             // 6️⃣ Retornar resultado unificado
             return {
             status: "success",
-            entryProductId: entryProduct.id,
+            entryProductId: entryProduct?.id,
             classificationId: classificationRecord.id,
             };
         } catch (error: any) {
@@ -348,8 +345,7 @@ export class ClassifyController {
                             .catch(() => null);
 
                         // 5️⃣ Obtener proveedor expandido (si existe)
-                        const supplierExpand = classification?.expand?.id_supplier;
-
+                        const supplierExpand = await getSupplierData(product.id_supplier);
                         // 6️⃣ Buscar las unidades y mediciones desde memoria
                         const unitType =
                             units.find((un: any) => un.id === classification?.unit_type) || null;
@@ -364,7 +360,7 @@ export class ClassifyController {
                             lote: ep.lote || "",
                             batch: ep.batch || "",
                             quantity: classification?.quantity ?? 0,
-                            id_supplier: supplierExpand?.id || product.id_supplier || "",
+                            id_supplier: supplierExpand || "",
                             origin_country: classification?.origin_country || "",
                             seller_country: classification?.origin_seller || "",
                             weight: product.weight || 0,
@@ -377,7 +373,7 @@ export class ClassifyController {
                             brand: product.brand || "",
                             model: product.model || "",
                             serial_number: product.serial_number || "",
-                            unit_price: product.unit_price || 0,
+                            unit_price: ep.unit_price == 0 || ep.unit_price == undefined? product.unit_price : ep.unit_price || 0,
 
                             unit_weight: unitWeight
                                 ? { id: unitWeight.id, name: unitWeight.name }
@@ -385,9 +381,10 @@ export class ClassifyController {
 
                             tariff_fraction: classification?.tariff_fraction || 0,
                             description: product.description || "",
+                            comments: classification?.comments || "",
                             parts_number: classification?.partys || 0,
                             item: classification?.item || "",
-                            limps: classification?.lumps || 0,
+                            lumps: classification?.lumps || 0,
 
                             supplier: supplierExpand
                                 ? {
@@ -404,6 +401,8 @@ export class ClassifyController {
                             syncError: null,
                             id_pocketbase: classification?.id || null,
                             damage: Boolean(ep.is_damage),
+                            is_outrank:Boolean(ep.is_outrank),
+                            is_shortage:Boolean(ep.is_shortage)
                         } as classifyProduct;
                     })
                 )
@@ -420,10 +419,10 @@ export class ClassifyController {
         }
     }
 
-    public static async finalizeReview(entryId: string, products: classifyProduct[]) {
+    public static async finalizeReview(entryId: Entry, products: classifyProduct[]) {
         try {
             // 1️⃣ Obtener la entrada actual desde PocketBase
-            const entry = await pb.collection("Entrys").getOne(entryId);
+            const entry = await pb.collection("Entrys").getOne(entryId.id);
 
             if (!entry) {
                 return { status: "error", message: "Entrada no encontrada." };
@@ -451,9 +450,13 @@ export class ClassifyController {
             }
 
             // 5️⃣ Actualizar la entrada con el nuevo estatus y marcarla como revisada
-            await pb.collection("Entrys").update(entryId, {
+            await pb.collection("Entrys").update(entryId.id, {
                 is_reviewed: true,
                 id_status: findStatus.id,
+                subtotal: entryId.subtotal,
+                packing_price: entryId.packing_price,
+                other_price: entryId.other_price,
+                total: entryId.total
             });
 
             // 6️⃣ Obtener todos los IDs de productos relacionados
@@ -493,10 +496,10 @@ export class ClassifyController {
         }
     }
 
-    public static async finalizeClassification(entryId: string, products: classifyProduct[]) {
+    public static async finalizeClassification(entryId: Entry, products: classifyProduct[]) {
         try {
             // 1️⃣ Obtener la entrada actual desde PocketBase
-            const entry = await pb.collection("Entrys").getOne(entryId);
+            const entry = await pb.collection("Entrys").getOne(entryId.id);
 
             if (!entry) {
                 return { status: "error", message: "Entrada no encontrada." };
@@ -556,9 +559,13 @@ export class ClassifyController {
             }
 
             // 7️⃣ Actualizar la entrada: marcar como clasificada y cambiar el estado
-            await pb.collection("Entrys").update(entryId, {
+            await pb.collection("Entrys").update(entryId.id, {
                 is_classify: true,
                 id_status: findStatus.id,
+                subtotal: entryId.subtotal,
+                packing_price: entryId.packing_price,
+                other_price: entryId.other_price,
+                total: entryId.total
             });
 
             // 8️⃣ Actualizar todos los productos relacionados

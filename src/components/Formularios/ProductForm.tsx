@@ -188,9 +188,9 @@ const renderPreview = (file: File | string) => {
     if (missingFields.length > 0) {
       await Swal.fire({
       icon: "warning",
-      title: "Campos incompletos",
+      title: t("Alerts.txtFields"),
       html: `
-        <p>Faltan los siguientes campos por completar:</p>
+        <p>${t("Alerts.txtFieldsMsg")}:</p>
         <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
           ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
         </ul>
@@ -249,7 +249,7 @@ const renderPreview = (file: File | string) => {
     if (!rate.alias) missing.push("Alias");
     if (!rate.brand) missing.push("Marca");
     if (!rate.code) missing.push("Código");
-    if (!rate.unit_price || rate.unit_price === 0) missing.push("Precio unitario");
+    // if (!rate.unit_price || rate.unit_price === 0) missing.push("Precio unitario");
     if (!rate.description) missing.push("Descripción");
     if (!rate.id_measurement) missing.push("Medida");
     if (!rate.id_supplier) missing.push("Proveedor");
@@ -267,7 +267,7 @@ const renderPreview = (file: File | string) => {
     return rate.alias != '' &&
     rate.brand != '' &&
     rate.code != '' &&
-    rate.unit_price != 0 &&
+    // rate.unit_price != 0 &&
     rate.description != '' &&
     rate.id_measurement != '' &&
     rate.id_supplier != '' &&
@@ -292,36 +292,21 @@ const renderPreview = (file: File | string) => {
           dark:bg-slate-800 dark:text-cyan-300
         "
       >
-        {/* Header */}
-        {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-          <button
-            onClick={() => setOpenModal(false)}
-            className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-          >
-            <IoMdCloseCircleOutline />
-          </button>
-          <button onClick={(()=>setOpenModal(false))} className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer">
-            <TiMinusOutline />
-          </button>
-          <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-            {t("products.btnCreate")}
-          </p>
-        </div> */}
 
         {/* Body */}
         <div className=" overflow-auto p-5">
           <form className=" grid grid-cols-2 gap-5 " >
             {/* Campos */}
-            <TextField sx={inputText} variant="filled" type="text" label="name" id="name" value={productState.productForm.name} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="text" label="alias" id="alias" value={productState.productForm.alias} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="text" label="code" id="code" value={productState.productForm.code} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="number" inputProps={{ min: 0 }} label="part_number" id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="text" label="model" id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="text" label="brand" id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="text" label="serial_number" id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
-            <TextField sx={inputText} variant="filled" type="number" label="unit_price USD" id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblName")} id="name" value={productState.productForm.name} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblAlias")} id="alias" value={productState.productForm.alias} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblCode")} id="code" value={productState.productForm.code} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" inputProps={{ min: 0 }} label={t("products.form.lblPart_number")} id="part_number" value={productState.productForm.part_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblModel")} id="model" value={productState.productForm.model} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblBrand")} id="brand" value={productState.productForm.brand} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblSerial_number")} id="serial_number" value={productState.productForm.serial_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required />
+            <TextField sx={inputText} variant="filled" type="number" inputProps={{ min: 0 }} label={t("products.form.lblUnit_price")+" USD"} id="unit_price" value={productState.productForm.unit_price} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth />
             <div>
-              <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label="weight" fullWidth required />
+              <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" inputProps={{ min: 0 }} id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label={t("products.form.lblWeight")} fullWidth required />
               <Select
                 sx={{
                     width: "30%",
@@ -380,20 +365,21 @@ const renderPreview = (file: File | string) => {
                 });
               }}
               renderInput={(params) => (
-                <TextField sx={inputText} variant="filled" {...params} required label="Proveedor" />
+                <TextField sx={inputText} variant="filled" {...params} required label={t("products.form.lblSupplier")} />
               )}
             />
 
             {/* Archivos con preview */}
-            <TextField sx={inputText} variant="filled" type="text" label="description" id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
-            <TextField sx={inputText} variant="filled" type="text" label="traduccion" id="traduction" value={productState.productForm.traduction} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblDescription")} id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
+            <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblTraduction")} id="traduction" value={productState.productForm.traduction} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
-                Archivos
+                {t("products.form.lblDocuments")}
               </label>
               <input
                 type="file"
                 multiple
+                accept="image/*"
                 onChange={handleFileChange}
                 className="block w-full text-sm text-gray-700 
                           border border-cyan-500 rounded-lg cursor-pointer 
