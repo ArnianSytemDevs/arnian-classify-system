@@ -1,7 +1,9 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 
 export const usePreventNavigation = () => {
+  const {t} = useTranslation()
   useEffect(() => {
     // 🔹 Interceptar cierre, recarga o F5
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -14,12 +16,12 @@ export const usePreventNavigation = () => {
       e.preventDefault();
 
       Swal.fire({
-        title: "¿Deseas salir de esta página?",
-        text: "Si sales, podrías perder los cambios no guardados.",
+        title: t("Alerts.txtCloseProccess") ,
+        text: t("Alerts.txtCloseProccessMsg") ,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: t("Alerts.txtCloseProccessConfim") ,
+        cancelButtonText: t("Alerts.txtCloseProccessDecline") ,
         confirmButtonColor: "#ef4444",
       }).then((result) => {
         if (result.isConfirmed) {

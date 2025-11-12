@@ -138,9 +138,9 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         if (missingFields.length > 0) {
             await Swal.fire({
             icon: "warning",
-            title: "Campos incompletos",
+            title: t("Alerts.txtFields"),
             html: `
-                <p>Faltan los siguientes campos por completar:</p>
+                <p>${t("Alerts.txtFieldsMsg")}:</p>
                 <ul style="text-align: left; margin-top: 10px; color: #ef4444;">
                 ${missingFields.map((f) => `<li>• ${f}</li>`).join("")}
                 </ul>
@@ -169,7 +169,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         if (resp) {
             await Swal.fire({
             icon: "success",
-            title: t("Entrys.alerSucces", { defaultValue: "Entrada guardada correctamente" }),
+            title: t("Entrys.alerSucces", { defaultValue: t("Alerts.txtEntrySucces") }),
             confirmButtonColor: "#22c55e",
             timer: 1500,
             showConfirmButton: false,
@@ -187,7 +187,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         } else {
             await Swal.fire({
             icon: "error",
-            title: t("Entrys.alertError", { defaultValue: "Error al guardar la entrada" }),
+            title: t("Entrys.alertError", { defaultValue: t("Alerts.txtEntryError") }),
             confirmButtonColor: "#ef4444",
             customClass: {
                 popup: "swal-over-modal",
@@ -305,7 +305,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
             <div className="flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300dark:bg-slate-800 dark:text-cyan-300">
                 <div className=" overflow-auto p-5 dark:bg-slate-800">
                     <form className=" grid grid-cols-2 gap-5 " >
-                        <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.public_key")} />
+                        <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.pkey")} />
                         <TextField sx={inputText} variant='filled' type="text" name="invoice_number" id="invoice_number" value={entryState.entryForm.invoice_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.invoice")} />
                         <TextField sx={inputText} variant='filled' type="text" name="tax_id" id="tax_id" value={entryState.entryForm.tax_id} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label="TAX" />
                         <Autocomplete

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import logo from "../../assets/icon.png";
 import { FaBoxes, FaEnvelopeOpenText } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
@@ -12,10 +12,18 @@ import { useNavigate } from 'react-router';
 import Swal from "sweetalert2";
 
 export default function MenuComponent() {
-    const { setSelectedWindow,classifyDispatch, productDispatch, entryDispatch, suppliersDispatch, clientsDispatch } = useClassifyContext();
+    const { selectedWindow,setSelectedWindow,classifyDispatch, productDispatch, entryDispatch, suppliersDispatch, clientsDispatch } = useClassifyContext();
     const [lengOpen, setLengOpen] = useState(false);
     const { t, i18n } = useTranslation();
     const navigate = useNavigate()
+
+    useEffect(()=>{
+        entryDispatch({type:"clear-state"})
+        productDispatch({ type:"clear-state" })
+        classifyDispatch({ type:"clear-all" })
+        suppliersDispatch({ type:"clear-state" })
+        clientsDispatch({ type:"clear-state" })
+    },[selectedWindow])
 
     const changeLanguage = (lang: "en" | "es") => {
         i18n.changeLanguage(lang);
@@ -34,11 +42,11 @@ export default function MenuComponent() {
     const handleLogout = async () => {
         const confirm = await Swal.fire({
             icon: "question",
-            title: "¿Cerrar sesión?",
-            text: "Tu sesión actual se cerrará y volverás a la pantalla de inicio.",
+            title: t("Alerts.txtCloseSession"),
+            text: t("Alerts.txtCloseSessionMsg"),
             showCancelButton: true,
-            confirmButtonText: "Sí, cerrar sesión",
-            cancelButtonText: "Cancelar",
+            confirmButtonText: t("Alerts.txtCloseSessionConfirm"),
+            cancelButtonText: t("Alerts.txtCloseSessionDecline"),
             confirmButtonColor: "#ef4444",
             cancelButtonColor: "#9ca3af",
             background: "#f9fafb",
@@ -58,7 +66,7 @@ export default function MenuComponent() {
                 clientsDispatch({ type:"clear-state" })
             await Swal.fire({
                 icon: "success",
-                title: "Sesión cerrada",
+                title: t("Alerts.txtCloseSessionSucces"),
                 text: resp.message,
                 confirmButtonColor: "#22c55e",
                 timer: 1500,
@@ -67,8 +75,8 @@ export default function MenuComponent() {
             } else {
             await Swal.fire({
                 icon: "error",
-                title: "Error al cerrar sesión",
-                text: resp.message || "Ocurrió un problema al cerrar tu sesión.",
+                title: t("Alerts.txtCloseSessionError"),
+                text: resp.message || t("Alerts.txtCloseSessionErrorMsg"),
                 confirmButtonColor: "#ef4444",
             });
             }
@@ -79,8 +87,8 @@ export default function MenuComponent() {
             console.error("❌ Error inesperado al cerrar sesión:", err);
             await Swal.fire({
             icon: "error",
-            title: "Error inesperado",
-            text: "No se pudo cerrar la sesión correctamente.",
+            title: t("Alerts.txtSessionFatalError"),
+            text: `${t("Alerts.txtSessionFatalErrorMsg")}.`,
             confirmButtonColor: "#ef4444",
             });
             navigate("/");

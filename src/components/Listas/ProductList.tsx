@@ -17,6 +17,7 @@ import { FaFilter, FaBroom } from "react-icons/fa";
 import type { SelectChangeEvent } from "@mui/material";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import NoPhoto from "../../assets/NotPhoto.png";
+import { useTranslation } from "react-i18next";
 
 type ProductListProps = {
   status: Status[];
@@ -46,6 +47,7 @@ export default function ProductList({ status }: ProductListProps) {
     created: "",
     updated: "",
   });
+  const { t } = useTranslation();
 
   // ✅ estilos coherentes
   const thBody =
@@ -227,13 +229,13 @@ export default function ProductList({ status }: ProductListProps) {
                 </button>
               </th>
               <th className={thHead}></th>
-              <th className={thHead}>Alias</th>
-              <th className={thHead}>Nombre</th>
-              <th className={thHead}>Código</th>
-              <th className={thHead}>Marca</th>
-              <th className={thHead}>Modelo</th>
-              <th className={thHead}>Descripción</th>
-              <th className={thHead}>Estatus</th>
+              <th className={thHead}>{t("products.form.lblAlias")}</th>
+              <th className={thHead}>{t("products.form.lblName")}</th>
+              <th className={thHead}>{t("products.form.lblPart_number")}</th>
+              <th className={thHead}>{t("products.form.lblBrand")}</th>
+              <th className={thHead}>{t("products.form.lblModel")}</th>
+              <th className={thHead}>{t("products.form.lblDescription")}</th>
+              <th className={thHead}>{t("products.form.lblStatus")}</th>
             </tr>
           </thead>
 
@@ -310,19 +312,19 @@ export default function ProductList({ status }: ProductListProps) {
           <div className="grid grid-cols-2 gap-5 p-5 text-gray-800 dark:text-gray-200">
             <TextField variant='filled'  sx={inputText} name="id" label="ID" value={filters.id} onChange={handleChange} fullWidth />
             <TextField variant='filled' sx={inputText} name="public_key" label="Public Key" value={filters.public_key} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="name" label="Nombre" value={filters.name} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="alias" label="Alias" value={filters.alias} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="code" label="Código" value={filters.code} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="name" label={t("products.form.lblName")} value={filters.name} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="alias" label={t("products.form.lblAlias")} value={filters.alias} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="code" label={t("products.form.lblAlias")} value={filters.code} onChange={handleChange} fullWidth />
 
             <FormControl>
               <label className="text-gray-700 dark:text-gray-300">Deprected</label>
               <Switch id="deprected" name="deprected" checked={filters.deprected} onChange={handleSwitch} />
             </FormControl>
 
-            <TextField variant='filled' sx={inputText} name="part_number" label="Part Number" value={filters.part_number} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="model" label="Modelo" value={filters.model} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="brand" label="Marca" value={filters.brand} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="serial_number" label="No. Serie" value={filters.serial_number} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="part_number" label={t("products.form.lblPart_number")} value={filters.part_number} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="model" label={t("products.form.lblModel")} value={filters.model} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="brand" label={t("products.form.lblBrand")} value={filters.brand} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="serial_number" label={t("products.form.lblSerial_number")} value={filters.serial_number} onChange={handleChange} fullWidth />
 
             <FormControl fullWidth>
               <Select id="id_status" name="id_status" value={filters.id_status} onChange={handleChange} 
@@ -365,11 +367,11 @@ export default function ProductList({ status }: ProductListProps) {
               inputValue={inputValue}
               onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
               onChange={handleAutocomplete}
-              renderInput={(params) => <TextField sx={inputText} variant='filled' {...params} label="Proveedor" fullWidth />}
+              renderInput={(params) => <TextField sx={inputText} variant='filled' {...params} label={t("products.form.lblSupplier")} fullWidth />}
             />
 
-            <TextField variant='filled' sx={inputText} name="created" type="date" label="Creado desde" value={filters.created} onChange={handleChange} fullWidth />
-            <TextField variant='filled' sx={inputText} name="updated" type="date" label="Actualizado desde" value={filters.updated} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="created" type="date" label={t("products.form.lblCreated")} value={filters.created} onChange={handleChange} fullWidth />
+            <TextField variant='filled' sx={inputText} name="updated" type="date" label={t("products.form.lblUpdated")} value={filters.updated} onChange={handleChange} fullWidth />
           </div>
         </div>
       </Modal>

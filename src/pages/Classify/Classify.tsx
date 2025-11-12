@@ -7,7 +7,7 @@ import { FaTrashAlt, FaSave } from "react-icons/fa";
 import type { Supplier, Clients, Measurement, Units, Product } from "../../types/collections";
 import { ClassifyController } from "./Classify.controller";
 import { v4 as uuidv4 } from "uuid";
-import { GetCountries } from "react-country-state-city";
+import { getCountriesByAnexo22 } from "../../helpers/getCountriesAnexxo22";
 import "react-country-state-city/dist/react-country-state-city.css";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
@@ -23,6 +23,8 @@ import { pb } from "../../helpers/pocketbase/pocketbase";
 import NoPhoto from '../../assets/NotPhoto.png'
 import { checkRole } from "../../hooks/usePremission.controller";
 import UserPermissions from "../../hooks/usePremission";
+import { FaCheck } from "react-icons/fa";
+import { LuTriangleAlert } from "react-icons/lu";
 
 export default function Classify() {
 
@@ -72,7 +74,7 @@ export default function Classify() {
         try {
         const [userRole, countriesResp, unitsResp, measurementsResp] :any = await Promise.all([
             checkRole(),
-            GetCountries(),
+            getCountriesByAnexo22(),
             ClassifyController.getUnits(),
             ClassifyController.getMeasurement(),
         ]);
@@ -234,7 +236,7 @@ export default function Classify() {
                 "unit_weight",
                 "parts_number",
                 "item",
-                "limps",
+                "lumps",
             ]
             : [
                 "name",
@@ -247,7 +249,7 @@ export default function Classify() {
                 "tariff_fraction",
                 "parts_number",
                 "item",
-                "limps",
+                "lumps",
             ];
 
         // 🔍 Validar campos vacíos
@@ -265,10 +267,10 @@ export default function Classify() {
             const fieldNames = missingFields.join(", ");
             await Swal.fire({
                 icon: "warning",
-                title: "Campos incompletos",
-                html: `<p>Faltan los siguientes campos:</p>
+                title: t("Classify.alerts.txtWarningProds"),
+                html: `<p>${t("Classify.alerts.txtWarningProdsMsg")}:</p>
                     <p class="text-rose-600 font-semibold mt-2">${fieldNames}</p>`,
-                confirmButtonText: "Entendido",
+                confirmButtonText: t("Classify.alerts.Understood"),
                 confirmButtonColor: "#3085d6",
                 background: "#f9fafb",
                 color: "#1e293b",
@@ -279,8 +281,7 @@ export default function Classify() {
         // 💾 Guardar en PocketBase
         const result = await ClassifyController.saveProductClassification(
             classifyState.entrySelected,
-            product,
-            role
+            product
         );
 
         // ✅ Manejo de respuesta
@@ -292,8 +293,8 @@ export default function Classify() {
 
             await Swal.fire({
                 icon: "success",
-                title: "Producto guardado",
-                text: "La información fue almacenada correctamente.",
+                title: t("Classify.alerts.txtSaveProduct"),
+                text: t("Classify.alerts.txtSaveProductMsg"),
                 confirmButtonColor: "#22c55e",
                 timer: 1500,
                 showConfirmButton: false,
@@ -301,7 +302,7 @@ export default function Classify() {
         } else {
             await Swal.fire({
                 icon: "error",
-                title: "Error al guardar",
+                title: t("Classify.alerts.txtErrorProduct"),
                 text: result.message,
                 confirmButtonColor: "#ef4444",
             });
@@ -313,8 +314,8 @@ export default function Classify() {
         const isDarkMode = document.documentElement.classList.contains("dark");
 
         const result = await Swal.fire({
-        title: "¿Eliminar producto?",
-        text: "Esta acción eliminará el producto del listado. ¿Deseas continuar?",
+        title: t("Classify.alerts.txtRemoveProduct") ,
+        text: t("Classify.alerts.txtRemoveProductMsg") ,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: isDarkMode ? "#ef4444" : "#d33",
@@ -329,8 +330,8 @@ export default function Classify() {
         classifyDispatch({ type: "remove-product", payload: { public_key } });
 
         await Swal.fire({
-            title: "Eliminado",
-            text: "El producto ha sido eliminado correctamente.",
+            title: t("Classify.alerts.txtDeleteProduct"),
+            text: t("Classify.alerts.txtDeleteProductMsg"),
             icon: "success",
             confirmButtonColor: isDarkMode ? "#3b82f6" : "#3085d6",
             background: isDarkMode ? "#0f172a" : "#f9fafb",
@@ -349,8 +350,8 @@ export default function Classify() {
         if(classifyState.products.some((p) => p.edit === true)){
             Swal.fire({
             icon: "warning",
-            title: "Edición activa",
-            text: "No puedes realizar esta acción mientras existan productos en modo edición. Guarda o confirma los cambios primero.",
+            title: t("Classify.alerts.txtEditWarning"),
+            text: t("Classify.alerts.txtEditWarningMsg"),
             confirmButtonColor: "#f59e0b",
             });
         }else{
@@ -360,12 +361,12 @@ export default function Classify() {
 
     const handleReturn = () =>{
         Swal.fire({
-        title: "¿Deseas salir de esta página?",
-        text: "Si sales, podrías perder los cambios no guardados.",
+        title: t("Classify.alerts.txtReturnWarning"),
+        text: t("Classify.alerts.txtReturnWarningMsg"),
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar",
+        confirmButtonText: t("Classify.alerts.txtReturnWarningConfirm"),
+        cancelButtonText: t("Classify.alerts.txtReturnWarningDecline"),
         confirmButtonColor: "#ef4444",
         }).then((result) => {
         if (result.isConfirmed) {
@@ -505,40 +506,45 @@ export default function Classify() {
         if (!classifyState.entrySelected.id) {
             await Swal.fire({
                 icon: "warning",
-                title: "No hay entrada seleccionada",
-                text: "Selecciona una entrada antes de continuar.",
+                title: t("Classify.alerts.txtWarningNoentry"),
+                text: t("Classify.alerts.txtWarningNoentryMsg"),
             });
             return;
         }
 
         const confirm = await Swal.fire({
-            title: "¿Finalizar clasificación?",
-            text: "Esta acción marcará la entrada como completamente clasificada. Solo se puede realizar si la revisión fue completada.",
+            title: t("Classify.alerts.txtFinishClassify"),
+            text: t("Classify.alerts.txtFinishClassifyMsg"),
             icon: "question",
             showCancelButton: true,
-            confirmButtonText: "Finalizar clasificación",
-            cancelButtonText: "Cancelar",
+            confirmButtonText: t("Classify.alerts.txtFinishClassifySucces"),
+            cancelButtonText: t("Classify.alerts.txtReturnWarningDecline"),
             confirmButtonColor: "#16a34a",
         });
 
         if (!confirm.isConfirmed) return;
 
-        const result = await ClassifyController.finalizeClassification(classifyState.entrySelected.id,classifyState.products);
+        const result = await ClassifyController.finalizeClassification(classifyState.entrySelected,classifyState.products);
 
         if (result.status === "success") {
             await Swal.fire({
                 icon: "success",
-                title: "Clasificación completada",
-                text: result.message,
+                title: t("Classify.alerts.txtFinishClassifyOk"),
+                text: t("Classify.alerts.txtFinishClassifyOkMsg"),
                 confirmButtonColor: "#22c55e",
                 timer: 1500,
                 showConfirmButton: false,
             });
+
+            classifyDispatch({ type: "clear-all" });
+            entryDispatch({ type: "clear-state" });
+            navigate("/dashboard");
+            return; // 🔙 Finaliza la ejecución tras limpiar y navegar
         } else {
             await Swal.fire({
                 icon: result.status === "warning" ? "warning" : "error",
-                title: "Atención",
-                text: result.message,
+                title: t("Classify.alerts.txtFinishClassifyWarning"),
+                text: t("Classify.alerts.txtFinishClassifyWarningMsg"),
                 confirmButtonColor: "#f59e0b",
             });
         }
@@ -553,40 +559,46 @@ export default function Classify() {
             if (!classifyState.entrySelected.id) {
                 await Swal.fire({
                     icon: "warning",
-                    title: "No hay entrada seleccionada",
-                    text: "Selecciona una entrada antes de continuar.",
+                    title: t("Classify.alerts.txtWarningNoentry"),
+                    text: t("Classify.alerts.txtWarningNoentryMsg"),
                 });
                 return;
             }
 
             const confirm = await Swal.fire({
-                title: "¿Finalizar revisión?",
-                text: "Una vez finalizada la revisión, esta entrada pasará a la siguiente etapa del proceso.",
+                title: t("Classify.alerts.txtMarkreviewQuestion"),
+                text: t("Classify.alerts.txtMarkreviewQuestionMsg"),
                 icon: "question",
                 showCancelButton: true,
-                confirmButtonText: "Finalizar revisión",
-                cancelButtonText: "Cancelar",
+                confirmButtonText: t("Classify.alerts.txtMarkreviewQuestionSucces"),
+                cancelButtonText: t("Classify.alerts.txtReturnWarningDecline"),
                 confirmButtonColor: "#4f46e5",
             });
 
             if (!confirm.isConfirmed) return;
 
-            const result = await ClassifyController.finalizeReview(classifyState.entrySelected.id,classifyState.products);
+            const result = await ClassifyController.finalizeReview(classifyState.entrySelected,classifyState.products);
 
             if (result.status === "success") {
                 await Swal.fire({
                     icon: "success",
-                    title: "Revisión completada",
-                    text: result.message,
+                    title: t("Classify.alerts.txtMarkReviewOk"),
+                    text: t("Classify.alerts.txtMarkReviewOkMsg"),
                     confirmButtonColor: "#22c55e",
                     timer: 1500,
                     showConfirmButton: false,
                 });
+
+                classifyDispatch({ type: "clear-all" });
+                entryDispatch({ type: "clear-state" });
+                navigate("/dashboard");
+                return; // 🔙 Finaliza la ejecución tras limpiar y navegar
+
             } else {
                 await Swal.fire({
                     icon: result.status === "warning" ? "warning" : "error",
-                    title: "Atención",
-                    text: result.message,
+                    title: t("Classify.alerts.txtMarkReviewWarning"),
+                    text: t("Classify.alerts.txtMarkReviewWarningMsg"),
                     confirmButtonColor: "#f59e0b",
                 });
             }
@@ -599,11 +611,11 @@ export default function Classify() {
     const handleFinishEntry = async () => {
         const confirm = await Swal.fire({
             icon: "question",
-            title: "¿Finalizar entrada?",
-            text: "Esta acción marcará la entrada como finalizada (estatus 'Finished').",
+            title: t("Classify.alerts.txtFinalizeEntry"),
+            text: t("Classify.alerts.txtFinalizeEntryMsg"),
             showCancelButton: true,
-            confirmButtonText: "Sí, finalizar",
-            cancelButtonText: "Cancelar",
+            confirmButtonText: t("Classify.alerts.txtFinalizeEntrySucces"),
+            cancelButtonText: t("Classify.alerts.txtReturnWarningDecline"),
             confirmButtonColor: "#7c3aed",
             cancelButtonColor: "#9ca3af",
             background: "#f9fafb",
@@ -618,8 +630,8 @@ export default function Classify() {
             if (result.status === "success") {
                 await Swal.fire({
                     icon: "success",
-                    title: "Entrada finalizada",
-                    text: result.message,
+                    title: t("Classify.alerts.xtFinalizeEntryOk"),
+                    text: t("Classify.alerts.xtFinalizeEntryOkMsg"),
                     confirmButtonColor: "#22c55e",
                 });
 
@@ -633,15 +645,15 @@ export default function Classify() {
             if (result.status === "warning") {
                 await Swal.fire({
                     icon: "warning",
-                    title: "Atención",
-                    text: result.message,
+                    title: t("Classify.alerts.xtFinalizeEntryWarning"),
+                    text: t("Classify.alerts.xtFinalizeEntryWarningMsg"),
                     confirmButtonColor: "#f59e0b",
                 });
             } else {
                 await Swal.fire({
                     icon: "error",
-                    title: "Error",
-                    text: result.message,
+                    title: t("Classify.alerts.xtFinalizeEntryError"),
+                    text: t("Classify.alerts.xtFinalizeEntryErrorMsg"),
                     confirmButtonColor: "#ef4444",
                 });
             }
@@ -649,8 +661,8 @@ export default function Classify() {
             console.error("❌ Error al finalizar entrada:", err);
             await Swal.fire({
                 icon: "error",
-                title: "Error inesperado",
-                text: "Ocurrió un problema al intentar finalizar la entrada.",
+                title: t("Classify.alerts.xtFinalizeEntrySys"),
+                text: t("Classify.alerts.xtFinalizeEntrySysMsg"),
                 confirmButtonColor: "#ef4444",
             });
         }
@@ -667,7 +679,7 @@ export default function Classify() {
 
                     {/* 📄 Encabezado de entrada */}
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                        Datos generales de la entrada
+                        {t("Classify.txtInfo")}
                     </h3>
 
                     {/* 🧾 Campos generales */}
@@ -722,18 +734,18 @@ export default function Classify() {
 
                     {/* 💰 Totales financieros */}
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                        Totales financieros
+                        {t("Classify.txtInfo2")}
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {[
                         {
-                            label: "Subtotal",
+                            label: t("Classify.lblSubtotalPrice"),
                             value: classifyState.entrySelected.subtotal?.toFixed(2) || "0.00",
                             readOnly: true,
                         },
                         {
-                            label: "Precio embalaje",
+                            label: t("Classify.lblPackingPrice"),
                             value: classifyState.entrySelected.packing_price ?? 0,
                             onChange: (e: any) =>
                             classifyDispatch({
@@ -742,7 +754,7 @@ export default function Classify() {
                             }),
                         },
                         {
-                            label: "Otros costos",
+                            label: t("Classify.lblOtherPrice"),
                             value: classifyState.entrySelected.other_price ?? 0,
                             onChange: (e: any) =>
                             classifyDispatch({
@@ -751,7 +763,7 @@ export default function Classify() {
                             }),
                         },
                         {
-                            label: "Total general",
+                            label: t("Classify.lblTotalPrice"),
                             value: (
                             (classifyState.entrySelected.subtotal ?? 0) +
                             (classifyState.entrySelected.packing_price ?? 0) +
@@ -763,6 +775,7 @@ export default function Classify() {
                         <TextField
                             key={i}
                             variant="filled"
+                            disabled={ classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed }
                             type={onChange ? "number" : "text"}
                             label={label}
                             value={value}
@@ -778,57 +791,60 @@ export default function Classify() {
                 <hr className="my-4" />
                 {/* 🔍 BUSCADOR GLOBAL DE PRODUCTOS */}
                 <UserPermissions permission="addProduct" role={role}>
-                    <div className="flex justify-center mb-6">
-                        <Autocomplete
-                        disablePortal
-                        disabled={isAvaibleToEdit()}
-                        sx={{ width: 500 }}
-                        options={products}
-                        inputValue={inputProduct}
-                        getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
-                        onInputChange={(_, value) => setInputProduct(value)}
-                        onChange={(_, value) => handleAddProduct(value)}
-                        renderOption={(props, option) => (
-                            <li
-                            {...props}
-                            key={option.id}
-                            className="
-                                flex items-center gap-4 w-full px-4 py-3
-                                rounded-lg border border-gray-200
-                                bg-white
-                                hover:bg-gray-100 dark:hover:bg-slate-700
-                                dark:hover:text-gray-200
-                                hover:shadow-md transition-all duration-200 cursor-pointer
-                            "
-                            >
-                            {/* 🖼️ Imagen */}
-                            <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
-                                {renderImage(option.files, option)}
-                            </div>
+                    {
+                        classifyState.entrySelected.is_classify && classifyState.entrySelected.is_classify?(<></>):(
+                            <div className="flex justify-center mb-6">
+                                <Autocomplete
+                                disablePortal
+                                disabled={isAvaibleToEdit()}
+                                sx={{ width: 500 }}
+                                options={products}
+                                inputValue={inputProduct}
+                                getOptionLabel={(option) => `${option.name} (${option.brand || "Sin marca"})`}
+                                onInputChange={(_, value) => setInputProduct(value)}
+                                onChange={(_, value) => handleAddProduct(value)}
+                                renderOption={(props, option) => (
+                                    <li
+                                    {...props}
+                                    key={option.id}
+                                    className="
+                                        flex items-center gap-4 w-full px-4 py-3
+                                        rounded-lg border border-gray-200
+                                        bg-white
+                                        hover:bg-gray-100 dark:hover:bg-slate-700
+                                        dark:hover:text-gray-200
+                                        hover:shadow-md transition-all duration-200 cursor-pointer
+                                    "
+                                    >
+                                    {/* 🖼️ Imagen */}
+                                    <div className="flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                                        {renderImage(option.files, option)}
+                                    </div>
 
-                            {/* 🧾 Info */}
-                            <div className="flex flex-col flex-grow min-w-0">
-                                <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                Marca: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
-                                Modelo: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
-                                </span>
-                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                                Precio: ${Number(option.unit_price || 0).toFixed(2)}
-                                </span>
+                                    {/* 🧾 Info */}
+                                    <div className="flex flex-col flex-grow min-w-0">
+                                        <span className="font-semibold text-sm truncate">{option.name || "Sin nombre"}</span>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {t("Classify.list.lblBrand")}: <span className="font-medium text-gray-700 dark:text-gray-300">{option.brand || "N/A"}</span> — 
+                                        {t("Classify.list.lblModel")}: <span className="font-medium text-gray-700 dark:text-gray-300">{option.model || "N/A"}</span>
+                                        </span>
+                                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                                        {t("Classify.list.price")}: ${Number(option.unit_price || 0).toFixed(2)} USD
+                                        </span>
+                                    </div>
+                                    </li>
+                                )}
+                                renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
+                                />
+                                <button 
+                                    onClick={()=>{ handleCreateProduct() }}
+                                    className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
+                                > <FaPlusSquare /> </button>
                             </div>
-                            </li>
-                        )}
-                        renderInput={(params) => <TextField {...params} variant="filled" label={t("Classify.lblProd")} sx={inputText} />}
-                        />
-                        <button 
-                            onClick={()=>{ handleCreateProduct() }}
-                            className="text-green-400 hover:text-green-600 cursor-pointer text-2xl hover:border-2 border-green-600 p-2 rounded-sm"
-                        > <FaPlusSquare /> </button>
-
-                    </div>
+                        )
+                    }
                 </UserPermissions>
-                <div className="mt-6 flex gap-5">
+                <div className="mt-6 mb-5 flex gap-5">
                     <UserPermissions permission="saveReview" role={role} >
                         {
                             classifyState.entrySelected.is_reviewed? (<></>):(
@@ -836,7 +852,7 @@ export default function Classify() {
                                     onClick={() => handleSaveReview()}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                                 >
-                                    Finalizar Revisión
+                                {t("Classify.actions.btnFinishReview")}
                                 </button>
                             )
                         }
@@ -848,7 +864,7 @@ export default function Classify() {
                                 onClick={() => handleSaveClassification()}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                             >
-                                Finalizar Clasificación
+                                {t("Classify.actions.btnFinishClassify")}
                             </button>
                         ) }
                     </UserPermissions>
@@ -858,17 +874,17 @@ export default function Classify() {
                             onClick={()=>{ handleReturn() }}
                             className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                         >
-                            Salir
+                            {t("Classify.actions.btnReturn")}
                         </button>
                     </UserPermissions>
                     {
-                        classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed? (
+                        !classifyState.entrySelected.is_classify && !classifyState.entrySelected.is_reviewed ? (
                             <UserPermissions permission="closeClassify" role={role} >
                                 <button
                                     onClick={()=>{ handleFinishEntry() }}
                                     className="bg-violet-600 hover:bg-violet-700 text-white font-semibold px-6 py-2 rounded-md shadow-md cursor-pointer transition"
                                 >
-                                    Finalizar entrada
+                                {t("Classify.actions.btnFinishEntry")}
                                 </button>
                             </UserPermissions>
                         ):(<></>)
@@ -891,7 +907,7 @@ export default function Classify() {
                             : []
                         ),
                         t("Classify.list.lblQuantity"),
-                        t("Classify.list.lblUnit_price"),
+                        t("Classify.list.lblUnit_price") + " USD",
                         t("Classify.list.lblTotalValue"),
                         t("Classify.list.lblSupplier"),
                         t("Classify.list.lblCountry_origin"),
@@ -900,6 +916,8 @@ export default function Classify() {
                         t("Classify.list.lblNet_weight"),
                         t("Classify.list.lblUnit_weight"),
                         t("Classify.list.lblDamage"),
+                        t("Classify.list.lblIs_shortage"),
+                        t("Classify.list.lblIs_outrank"),
                         t("Classify.list.lblBrand"),
                         t("Classify.list.lblModel"),
                         t("Classify.list.lblNo_Series"),
@@ -912,6 +930,7 @@ export default function Classify() {
                             ]
                             : []
                         ),
+                        t("Classify.list.lblComments"),
                         t("Classify.list.lblParty"),
                         t("Classify.list.lblItem"),
                         t("Classify.list.lblLumps"),
@@ -950,21 +969,24 @@ export default function Classify() {
                                         </button>
                                     )
                                 }
-
-                                <button
-                                onClick={() => handleRemoveProduct(p.public_key)}
-                                className="text-red-400 hover:text-red-600 cursor-pointer text-2xl hover:border-2 border-red-600 p-2 rounded-sm "
-                                title="Eliminar"
-                                >
-                                <FaTrashAlt />
-                                </button>
+                                {
+                                    classifyState.entrySelected.is_reviewed && role == "Reviewer" || classifyState.entrySelected.is_classify && role == "Classifier" || classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed?(<></>):(
+                                        <button
+                                        onClick={() => handleRemoveProduct(p.public_key)}
+                                        className="text-red-400 hover:text-red-600 cursor-pointer text-2xl hover:border-2 border-red-600 p-2 rounded-sm "
+                                        title="Eliminar"
+                                        >
+                                        <FaTrashAlt />
+                                        </button>
+                                    )
+                                }
 
                                 {p.synced ? (
-                                    <span className="text-emerald-500 font-semibold">✔</span>
+                                    <span className="text-emerald-500 self-center text-center p-5  font-semibold"> <FaCheck /> </span>
                                 ) : p.syncError ? (
-                                    <span className="text-red-500" title={p.syncError}>⚠</span>
+                                    <span className="text-red-500 self-center text-center p-5 " title={p.syncError}><LuTriangleAlert /></span>
                                 ) : (
-                                    <span className="text-gray-400 cursor-progress text-2xl p-2 rounded-sm" ><CgSandClock /></span>
+                                    <span className="text-gray-400 self-center text-center cursor-progress text-2xl p-5 rounded-sm" ><CgSandClock /></span>
                                 )}
                             </td>
 
@@ -998,7 +1020,7 @@ export default function Classify() {
                                     onChange={(e) => handleChangeInput(e, p.public_key)}
                                     />
                                 </td>
-                            )}                        
+                            )}
                             <td className={thBody}>
                                 <TextField
                                 variant="filled"
@@ -1006,43 +1028,49 @@ export default function Classify() {
                                 name="quantity"
                                 value={p.quantity}
                                 type="number"
+                                inputProps={{ min: 0 }}
                                 sx={inputText}
                                 label={t("Classify.list.lblQuantity")}
                                 onChange={(e) => handleChangeInput(e, p.public_key)}
                                 />
                             </td>
                             
-                            <td className={thBody}>${Number(p.unit_price || 0).toFixed(2)}</td>
+                            <td className={thBody}>
+                                <TextField
+                                variant="filled"
+                                disabled={!p.edit}
+                                name="unit_price"
+                                value={p.unit_price}
+                                type="number"
+                                inputProps={{ min: 0 }}
+                                sx={inputText}
+                                label={t("Classify.list.lblUnit_price") + " USD"}
+                                onChange={(e) => handleChangeInput(e, p.public_key)}
+                                />
+                            </td>
+
                             <td className={thBody}>${Number(p.unit_price * p.quantity || 0).toFixed(2)}</td>
                             <td className={thBody}>{p.supplier?.name || p.id_supplier || "-"}</td>
 
                             {/* 🌎 País de origen */}
                             <td className={thBody}>
                             <Autocomplete
-                                options={countries}
+                                options={countries} // ya viene del getCountriesByAnexo22()
                                 disabled={!p.edit}
-                                getOptionLabel={(opt:any) => opt?.name || ""}
+                                getOptionLabel={(opt: any) => opt ? `${opt.id} - ${opt.name}` : ""}
                                 value={
-                                typeof p.origin_country === "object"
-                                    ? countries.find(
-                                        (c:any) =>
-                                        c.name === p.origin_country?.name ||
-                                        c.iso2 === p.origin_country?.iso2
-                                    ) || null
-                                    : countries.find(
-                                        (c:any) => c.name === p.origin_country || c.iso2 === p.origin_country
-                                    ) || null
+                                    typeof p.origin_country === "object"
+                                    ? countries.find((c: any) => c.id === p.origin_country?.id) || null
+                                    : countries.find((c: any) => c.id === p.origin_country) || null
                                 }
-                                onChange={(_, val) =>
-                                handleChangeCountry(p.public_key, "origin_country", val || null)
-                                }
+                                onChange={(_, val) => handleChangeCountry(p.public_key, "origin_country", val || null)}
                                 renderInput={(params) => (
-                                <TextField
+                                    <TextField
                                     {...params}
                                     variant="filled"
                                     label={t("Classify.list.lblCountry_origin")}
                                     sx={inputText}
-                                />
+                                    />
                                 )}
                             />
                             </td>
@@ -1052,21 +1080,13 @@ export default function Classify() {
                             <Autocomplete
                                 options={countries}
                                 disabled={!p.edit}
-                                getOptionLabel={(opt:any) => opt?.name || ""}
+                                getOptionLabel={(opt: any) => opt ? `${opt.id} - ${opt.name}` : ""}
                                 value={
-                                typeof p.seller_country === "object"
-                                    ? countries.find(
-                                        (c:any) =>
-                                        c.name === p.seller_country?.name ||
-                                        c.iso2 === p.seller_country?.iso2
-                                    ) || null
-                                    : countries.find(
-                                        (c:any) => c.name === p.seller_country || c.iso2 === p.seller_country
-                                    ) || null
+                                    typeof p.seller_country === "object"
+                                    ? countries.find((c: any) => c.id === p.seller_country?.id) || null
+                                    : countries.find((c: any) => c.id === p.seller_country) || null
                                 }
-                                onChange={(_, val) =>
-                                handleChangeCountry(p.public_key, "seller_country", val || null)
-                                }
+                                onChange={(_, val) => handleChangeCountry(p.public_key, "seller_country", val || null)}
                                 renderInput={(params) => (
                                 <TextField
                                     {...params}
@@ -1085,6 +1105,7 @@ export default function Classify() {
                                 name="weight"
                                 value={p.weight}
                                 type="number"
+                                inputProps={{ min: 0 }}
                                 sx={inputText}
                                 label={t("Classify.list.lblGross_weight")}
                                 onChange={(e) => handleChangeInput(e, p.public_key)}
@@ -1097,6 +1118,7 @@ export default function Classify() {
                                 name="net_weight"
                                 value={p.net_weight}
                                 type="number"
+                                inputProps={{ min: 0 }}
                                 sx={inputText}
                                 label={t("Classify.list.lblNet_weight")}
                                 onChange={(e) => handleChangeInput(e, p.public_key)}
@@ -1150,6 +1172,60 @@ export default function Classify() {
                                         name="damage"
                                         disabled={!p.edit}
                                         checked={p.damage}
+                                        onChange={(e)=>{ classifyDispatch({type:"change-damaage", payload: {e:e, productId:p.public_key}})}}
+                                    />
+                                </FormControl>
+                            </td>
+                            <td className={thBody}>
+                                <FormControl>
+                                    <Switch
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked": {
+                                            color: p.is_shortage ? "#fd2b2b" : "#2bdcfd", // color del thumb
+                                            "&:hover": {
+                                                backgroundColor: p.is_shortage
+                                                ? "rgba(253,43,43,0.1)"
+                                                : "rgba(43,220,253,0.1)", // halo al pasar el mouse
+                                            },
+                                            },
+                                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                                            backgroundColor: p.is_shortage ? "#fd2b2b" : "#2bdcfd", // color del track
+                                            },
+                                            "& .MuiSwitch-track": {
+                                            backgroundColor: p.is_shortage ? "#fdaaaa" : "#aef6fd", // color del track desactivado
+                                            },
+                                        }}
+                                        id="is_shortage"
+                                        name="is_shortage"
+                                        disabled={!p.edit}
+                                        checked={p.is_shortage}
+                                        onChange={(e)=>{ classifyDispatch({type:"change-damaage", payload: {e:e, productId:p.public_key}})}}
+                                    />
+                                </FormControl>
+                            </td>
+                            <td className={thBody}>
+                                <FormControl>
+                                    <Switch
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked": {
+                                            color: p.is_outrank ? "#fd2b2b" : "#2bdcfd", // color del thumb
+                                            "&:hover": {
+                                                backgroundColor: p.is_outrank
+                                                ? "rgba(253,43,43,0.1)"
+                                                : "rgba(43,220,253,0.1)", // halo al pasar el mouse
+                                            },
+                                            },
+                                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                                            backgroundColor: p.is_outrank ? "#fd2b2b" : "#2bdcfd", // color del track
+                                            },
+                                            "& .MuiSwitch-track": {
+                                            backgroundColor: p.is_outrank ? "#fdaaaa" : "#aef6fd", // color del track desactivado
+                                            },
+                                        }}
+                                        id="is_outrank"
+                                        name="is_outrank"
+                                        disabled={!p.edit}
+                                        checked={p.is_outrank}
                                         onChange={(e)=>{ classifyDispatch({type:"change-damaage", payload: {e:e, productId:p.public_key}})}}
                                     />
                                 </FormControl>
@@ -1219,8 +1295,22 @@ export default function Classify() {
                                 <TextField
                                 variant="filled"
                                 disabled={!p.edit}
+                                name="comments"
+                                type="text"
+                                value={p.comments}
+                                multiline
+                                sx={inputText}
+                                label={t("Classify.list.lblComments")}
+                                onChange={(e) => handleChangeInput(e, p.public_key)}
+                                />
+                            </td>
+                            <td className={thBody}>
+                                <TextField
+                                variant="filled"
+                                disabled={!p.edit}
                                 name="parts_number"
                                 type="number"
+                                inputProps={{ min: 0 }}
                                 value={p.parts_number}
                                 sx={inputText}
                                 label={t("Classify.list.lblParty")}
@@ -1233,6 +1323,7 @@ export default function Classify() {
                                 disabled={!p.edit}
                                 name="item"
                                 type="number"
+                                inputProps={{ min: 0 }}
                                 value={p.item}
                                 sx={inputText}
                                 label={t("Classify.list.lblItem")}
@@ -1243,9 +1334,10 @@ export default function Classify() {
                                 <TextField
                                 variant="filled"
                                 disabled={!p.edit}
-                                name="limps"
+                                name="lumps"
                                 type="number"
-                                value={p.limps}
+                                inputProps={{ min: 0 }}
+                                value={p.lumps}
                                 sx={inputText}
                                 label={t("Classify.list.lblLumps")}
                                 onChange={(e) => handleChangeInput(e, p.public_key)}
