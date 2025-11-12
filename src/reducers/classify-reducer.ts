@@ -86,10 +86,13 @@ export const ClassifyReducer = (
             unit_weight: "",
             tariff_fraction: 0,
             parts_number: 0,
+            comments:"",
             item: "",
-            limps: 0,
+            lumps: 0,
             edit: true,
             damage:false,
+            is_outrank:false,
+            is_shortage:false
           } as classifyProduct,
         ],
       };

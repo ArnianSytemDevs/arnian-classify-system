@@ -5,6 +5,8 @@ import { FaEyeSlash } from "react-icons/fa";
 import HomeController from './Home.controller';
 import { useNavigate } from 'react-router';
 import { ToastContainer,toast } from 'react-toastify';
+import { SessionManager } from '../../helpers/pocketbase/SessionManager';
+import { pb } from '../../helpers/pocketbase/pocketbase';
 
 export default function Home() {
 
@@ -14,6 +16,15 @@ export default function Home() {
     const [pass, setPass] = useState("");
     const [disBtn,setDisBtn] = useState<boolean>(false)
 
+    useEffect(() => {
+        if (pb.authStore.isValid) {
+            console.log("🔄 Sesión válida detectada. Redirigiendo...");
+            navigate("/dashboard");
+        } else {
+            SessionManager.init();
+        }
+    }, []);
+    
     useEffect(()=>{
         if(email == '' && pass == ''){
             setDisBtn(true)
@@ -62,7 +73,7 @@ return (
                     <label className=" px-1 text-md " >Password</label><br />
                     <div className='flex flex-row' >
                         <input  className=" w-full text-md px-1  outline-none focus:ring-0 focus:outline-none " value={pass} type={watchPass ? "text":"password"} onChange={ (e)=>{ setPass( e.target.value.toString() ) } } minLength={8} />
-                        <button className='text-white cursor-pointer' onClick={(e)=>{ e.preventDefault(); setWatchPass(!watchPass); }} >{ watchPass? <FaEyeSlash className=' text-md text-blue-500 hover:text-blue-200 ' />:<FaEye className=' text-md text-blue-500 hover:text-blue-200 ' /> }</button>
+                        <a className='text-white cursor-pointer' onClick={(e)=>{ e.preventDefault(); setWatchPass(!watchPass); }} >{ watchPass? <FaEyeSlash className=' text-md text-blue-500 hover:text-blue-200 ' />:<FaEye className=' text-md text-blue-500 hover:text-blue-200 ' /> }</a>
                     </div>
                 </div>
                 <button

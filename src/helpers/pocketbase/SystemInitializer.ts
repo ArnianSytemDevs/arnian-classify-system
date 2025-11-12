@@ -29,11 +29,24 @@ const ANEXO_22_07 = [
   "Decenas","Cientos","Docenas","Caja","Botella","Carat"
 ];
 
+const baseMeasurements = [
+  { public_key: "WT-KG", name: "Kilogramo", alias: "kg"},
+  { public_key: "WT-G", name: "Gramo", alias: "g"},
+  { public_key: "WT-MG", name: "Miligramo", alias: "mg"},
+  { public_key: "WT-TON", name: "Tonelada", alias: "ton"},
+  { public_key: "WT-LB", name: "Libra", alias: "lb"},
+  { public_key: "WT-OZ", name: "Onza", alias: "oz"},
+  { public_key: "WT-CT", name: "Quilate", alias: "ct"},
+  { public_key: "WT-ST", name: "Stone", alias: "st"},
+  { public_key: "WT-TN", name: "Tonelada corta (EE.UU.)", alias: "short ton"},
+  { public_key: "WT-LTN", name: "Tonelada larga (UK)", alias: "long ton"}
+]
+
 const pkUnit = (i: number) => `A22U-${String(i + 1).padStart(2, "0")}`;
-const pkMeas = (i: number) => `A22M-${String(i + 1).padStart(2, "0")}`;
+// const pkMeas = (i: number) => `A22M-${String(i + 1).padStart(2, "0")}`;
 
 /* ────────────────────────────────
-   🧩 Inicializador optimizado
+    🧩 Inicializador optimizado
 ──────────────────────────────── */
 
 export class SystemInitializer {
@@ -71,7 +84,7 @@ export class SystemInitializer {
 
     // 2️⃣ Units y Measurements → se crean si faltan
     await this.ensureAnexo2207("Units", pkUnit);
-    await this.ensureAnexo2207("Measurements", pkMeas);
+    await this.ensureCollection("Measurements", baseMeasurements, "name");
   }
 
   /* ────────────────────────────────
@@ -106,7 +119,7 @@ export class SystemInitializer {
   }
 
   /* ────────────────────────────────
-     🧾 Inserta solo si faltan registros
+      🧾 Inserta solo si faltan registros
   ──────────────────────────────── */
   private static async ensureCollection(collection: string, data: any[], keyField: string) {
     const existing = await pb.collection(collection).getFullList({ requestKey: null });

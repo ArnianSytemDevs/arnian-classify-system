@@ -80,15 +80,18 @@ export type classifyProduct = {
     unit_weight: any;
     tariff_fraction: any;
     description:any;
+    comments: any;
     parts_number: any;
     item: any;
-    limps: any;
+    lumps: any;
     supplier?:any
     edit:boolean
     synced?: boolean;
     syncError?: string | null;
     id_pocketbase?: string | null;
-    damage:boolean
+    damage:boolean;
+    is_outrank:boolean;
+    is_shortage:boolean;
 };
 
 // Asegúrate de que tu tipo tenga public_key

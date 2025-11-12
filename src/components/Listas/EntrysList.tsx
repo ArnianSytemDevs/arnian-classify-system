@@ -7,6 +7,7 @@ import type { EntryFilters } from "../../types/forms";
 import { Autocomplete, FormControl, MenuItem, Modal, Select, Switch, TextField, type SelectChangeEvent} from "@mui/material";
 import NoPhoto from "../../assets/NotPhoto.png"
 import { pb } from "../../helpers/pocketbase/pocketbase";
+import { useTranslation } from "react-i18next";
 
 type EntrysListProops = {
     status: Status[];
@@ -20,6 +21,7 @@ export default function EntrysList({ status }: EntrysListProops) {
     const [clients, setClients] = useState<Clients[]>([]);
     const [inputValue, setInputValue] = useState("");
     const [inputCValue, setInputCValue] = useState("");
+    const { t } = useTranslation();
 
     const [filters, setFilters] = useState<EntryFilters>({
         id: "",
@@ -206,11 +208,11 @@ export default function EntrysList({ status }: EntrysListProops) {
                     <FaFilter className="text-gray-600 dark:text-cyan-300" />
                 </button>
                 </th>
-                <th className={thHead}>Document</th>
+                <th className={thHead}>{t("Entrys.form.document")}</th>
                 <th className={thHead}>TAX ID</th>
-                <th className={thHead}>Invoice</th>
-                <th className={thHead}>Fecha de creación</th>
-                <th className={thHead}>Status</th>
+                <th className={thHead}>{t("Entrys.form.invoice")}</th>
+                <th className={thHead}>{t("Entrys.form.created")}</th>
+                <th className={thHead}>{t("Entrys.form.status")}</th>
             </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -289,7 +291,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                         <TextField
                         sx={inputText}
                         name="invoice_number"
-                        label="Invoice"
+                        label={t("Entrys.form.invoice")}
                         value={filters.invoice_number}
                         onChange={handleChange}
                         fullWidth
@@ -355,7 +357,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
                         onChange={handleSupplierChange}
                         renderInput={(params) => (
-                            <TextField {...params} label="Proveedor" fullWidth />
+                            <TextField {...params} label={t("Entrys.form.supplier")} fullWidth />
                         )}
                         />
 
@@ -387,7 +389,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                         onInputChange={(_, newInputValue) => setInputCValue(newInputValue)}
                         onChange={handleClientChange}
                         renderInput={(params) => (
-                            <TextField {...params} label="Cliente" fullWidth />
+                            <TextField {...params} label={t("Entrys.form.client")} fullWidth />
                         )}
                         />
                     </div>

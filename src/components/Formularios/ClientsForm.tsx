@@ -336,6 +336,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
               <input
                 type="file"
                 multiple
+                accept="image/*"
                 onChange={handleFileChange}
                 className="block w-full text-sm text-gray-700 
                           border border-cyan-500 rounded-lg cursor-pointer 
