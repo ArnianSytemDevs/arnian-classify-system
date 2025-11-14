@@ -13,10 +13,11 @@ type ClientsFormProps = {
   openModal: boolean;
   setOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
   mode: string; // 'create' | 'edit'
+  call?: string;
   status?: Status[];
 };
 
-export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFormProps) {
+export default function ClientsForm({ openModal, setOpenModal, mode, call }: ClientsFormProps) {
   const { clientsState, clientsDispatch,role } = useClassifyContext();
   const { t } = useTranslation();
 
@@ -176,7 +177,7 @@ export default function ClientsForm({ openModal, setOpenModal, mode }: ClientsFo
 
       clientsDispatch({ type: "clear-state" });
       setOpenModal(false);
-      window.location.reload();
+      if(call != "component") window.location.reload();
     } else {
       await Swal.fire({
         icon: "error",

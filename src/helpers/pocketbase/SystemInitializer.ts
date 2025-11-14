@@ -1,7 +1,7 @@
 import { pb } from "./pocketbase";
 
 /* ────────────────────────────────
-   🧱 Datos base del sistema
+    🧱 Datos base del sistema
 ──────────────────────────────── */
 
 const baseStatus = [
@@ -9,7 +9,7 @@ const baseStatus = [
   { name: "Inactive", code: "2", color: "F51818", description: "Estado inactivo" },
   { name: "Edit", code: "3", color: "F5F518", description: "En edición" },
   { name: "Deprected", code: "4", color: "B0BABF", description: "Obsoleto" },
-  { name: "Finished", code: "5", color: "26F9FF", description: "Finalizado" },
+  { name: "Finished", code: "5", color: "009EA5", description: "Finalizado" },
   { name: "In_review", code: "6", color: "F527C8", description: "En revisión" },
   { name: "In_classify", code: "7", color: "27F5CF", description: "En clasificación" },
 ];

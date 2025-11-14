@@ -202,12 +202,13 @@ export default function EntrysList({ status }: EntrysListProops) {
                 <button
                     className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition"
                     onClick={() => {
-                    setOpenMod(true);
+                        setOpenMod(true);
                     }}
                 >
                     <FaFilter className="text-gray-600 dark:text-cyan-300" />
                 </button>
                 </th>
+                <th className={thHead}>{t("Entrys.form.entry")}</th>
                 <th className={thHead}>{t("Entrys.form.document")}</th>
                 <th className={thHead}>TAX ID</th>
                 <th className={thHead}>{t("Entrys.form.invoice")}</th>
@@ -236,6 +237,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                     }}
                     />
                 </td>
+                <td className={thBody}>{ent.public_key}</td>
                 <td className={thBody}  >{renderImage(ent.file,ent)}</td>
                 <td className={thBody}>{ent.id_tax}</td>
                 <td className={thBody}>{ent.invoice_number}</td>
@@ -249,7 +251,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                     })}
                 </td>
                 <td
-                    className={thBody}
+                    className={`${thBody} underline decoration-2` }
                     style={{
                     color: `#${status.find((st) => st.id === ent.id_status)?.color || "FFF"}`,
                     fontWeight: "bold",
@@ -280,6 +282,14 @@ export default function EntrysList({ status }: EntrysListProops) {
                 "
                 >
                     <div className="grid grid-cols-2 gap-5 p-5 text-gray-800 dark:text-gray-200">
+                        <TextField
+                        sx={inputText}
+                        name="public_key"
+                        label={t("Entrys.form.entry")}
+                        value={filters.public_key}
+                        onChange={handleChange}
+                        fullWidth
+                        />
                         <TextField
                         sx={inputText}
                         name="id_tax"

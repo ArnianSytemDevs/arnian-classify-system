@@ -6,37 +6,46 @@ import { pb } from '../../helpers/pocketbase/pocketbase';
 class HomeController {
     public static async login(email: string, pass: string) {
         try {
-            const resp: any = await loginUser(email, pass);
+        const resp: any = await loginUser(email, pass);
 
-            if (resp?.status === 400 || !resp?.token) {
-                console.warn("❌ Credenciales inválidas o token ausente.");
-                return false;
-            }
-
-            // ✅ Si autenticó correctamente, guardamos datos en cookies
-            Cookies.set("avatar", resp.record.avatar);
-            Cookies.set("email", resp.record.email);
-            Cookies.set("id", resp.record.id);
-            Cookies.set("name", resp.record.name);
-            Cookies.set("token", resp.token);
-            Cookies.set("categoryUser", resp.record.id_category_user);
-
-            // 🚀 Inicializar datos base del sistema
-            try {
-                console.log("⚙️ Verificando datos del sistema...");
-                await SystemInitializer.initializeSystemData();
-                console.log("✅ Datos base del sistema verificados correctamente.");
-            } catch (initError) {
-                console.error("⚠️ Error durante la inicialización del sistema:", initError);
-            }
-
-            return true;
-        } catch (err) {
-            console.error("❌ Error general en login:", err);
+        if (!resp?.token || resp?.status === 400) {
+            console.warn("❌ Invalid credentials or missing token.");
             return false;
         }
-    }
 
+        // ✅ Autenticar al authStore directamente (sin depender de pb_auth previo)
+        pb.authStore.save(resp.token, resp.record);
+
+        // ✅ Exportar cookie en formato que PocketBase reconoce
+        document.cookie = pb.authStore.exportToCookie({
+            httpOnly: false,
+            sameSite: "Lax",
+            secure: true
+        });
+
+        // ✅ Guardar tus cookies personalizadas (solo para mostrar datos en UI)
+        Cookies.set("avatar", resp.record.avatar);
+        Cookies.set("email", resp.record.email);
+        Cookies.set("id", resp.record.id);
+        Cookies.set("name", resp.record.name);
+        Cookies.set("categoryUser", resp.record.id_category_user);
+
+        // 🚀 Inicializar datos base del sistema
+        try {
+            console.log("⚙️ Verifying base system data...");
+            await SystemInitializer.initializeSystemData();
+            console.log("✅ System data verified successfully.");
+        } catch (initError) {
+            console.error("⚠️ Error during system initialization:", initError);
+        }
+
+        return true;
+        } catch (err) {
+        console.error("❌ General login error:", err);
+        return false;
+        }
+    }
+    
     public static async logout() {
         try {
         console.log("👋 Cerrando sesión del usuario...");

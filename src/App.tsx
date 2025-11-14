@@ -10,8 +10,8 @@ function App() {
 
   useEffect(() => {
     SessionManager.init();
-    return () => SessionManager.clear();
   }, []);
+
 
   return (
     <HashRouter>

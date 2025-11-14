@@ -8,7 +8,11 @@ import { useClassifyContext } from '../../hooks/useClassifyContext';
 import { pb } from '../../helpers/pocketbase/pocketbase';
 import { FaRegWindowClose } from "react-icons/fa";
 import UserPermissions from '../../hooks/usePremission';
+import { IoMdPersonAdd } from "react-icons/io";
+import { BsBuildingFillAdd } from "react-icons/bs";
 import Swal from "sweetalert2";
+import SuppliersForm from './SuppliersForm';
+import ClientsForm from './ClientsForm';
 
 type EntryFormProops = {
     openModal:boolean;
@@ -23,7 +27,9 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     const { t } = useTranslation();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [clients,setClients] = useState<Clients[]>([])
-    const [inputValue, setInputValue] = useState("");
+    const [inputValue, setInputValue] = useState(""); 
+    const [openSModal,setOpenSModal] =  useState(false)
+    const [openCModal,setOpenCModal] =  useState(false)
     const [inputCValue, setInputCValue] = useState("");
     const inputText = {
     "& .MuiFilledInput-root": {
@@ -56,7 +62,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         const trimmed = inputValue.trim();
 
         if (trimmed !== "") {
-        entryFormController.getSuppliers(trimmed, mode)
+        entryFormController.getSuppliers(trimmed, "create")
             .then((resp: any) => setSuppliers(resp))
             .catch((err) => console.error("❌ Error al cargar proveedores:", err));
         } else {
@@ -207,6 +213,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     const missing: string[] = [];
 
     if (!rate.public_key) missing.push("Clave pública");
+    // if (!rate.id_load) missing.push("Numero de carga");
     if (!rate.invoice_number) missing.push("Número de factura");
     if (!rate.tax_id) missing.push("TAX ID");
     if (!rate.id_client) missing.push("Cliente");
@@ -305,57 +312,68 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
             <div className="flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300dark:bg-slate-800 dark:text-cyan-300">
                 <div className=" overflow-auto p-5 dark:bg-slate-800">
                     <form className=" grid grid-cols-2 gap-5 " >
-                        <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.pkey")} />
+                        <TextField sx={inputText} variant='filled' type="text" name="public_key" id="public_key" value={entryState.entryForm.public_key} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.entry")} />
+                        <TextField sx={inputText} variant='filled' type="text" name="id_load" id="id_load" value={entryState.entryForm.id_load} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.load")} />
                         <TextField sx={inputText} variant='filled' type="text" name="invoice_number" id="invoice_number" value={entryState.entryForm.invoice_number} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label={t("Entrys.form.invoice")} />
                         <TextField sx={inputText} variant='filled' type="text" name="tax_id" id="tax_id" value={entryState.entryForm.tax_id} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>entryDispatch({ type:'change-textfield', payload:{e:e} })} label="TAX" />
-                        <Autocomplete
-                            className="w-full"
-                            id="id_supplier"
-                            disablePortal
-                            options={suppliers}
-                            // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
-                            value={entryState.entryForm.id_supplier}
-                            getOptionLabel={(option) => `${option.name} (${option.alias})`}
-            
-                            inputValue={inputValue}
-                            onInputChange={(_, newInputValue) => {
-                            setInputValue(newInputValue); // 🔎 dispara la búsqueda
-                            }}
-                            // 🔑 aquí usamos tu handle para despachar el ID del supplier
-                            onChange={(_, newValue) => {
-                            entryDispatch({
-                                type: "change-autocomplete-entry",
-                                payload: { field: "id_supplier", value: newValue },
-                            });
-                            }}
-                            renderInput={(params) => (
-                            <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.supplier")} />
-                            )}
-                        />
-                        <Autocomplete
-                            className="w-full"
-                            id="id_client"
-                            disablePortal
-                            options={clients}
-                            // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
-                            value={entryState.entryForm.id_client}
-                            getOptionLabel={(option) => `${option.name} `}
-            
-                            inputValue={inputCValue}
-                            onInputChange={(_, newInputCValue) => {
-                            setInputCValue(newInputCValue); // 🔎 dispara la búsqueda
-                            }}
-                            // 🔑 aquí usamos tu handle para despachar el ID del client
-                            onChange={(_, newCValue) => {
-                            entryDispatch({
-                                type: "change-autocomplete-entry",
-                                payload: { field: "id_client", value: newCValue },
-                            });
-                            }}
-                            renderInput={(params) => (
-                            <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.client")} />
-                            )}
-                        />
+                        <div className=" flex flex-row " >
+                            <Autocomplete
+                                className="w-full"
+                                id="id_supplier"
+                                disablePortal
+                                options={suppliers}
+                                // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
+                                value={entryState.entryForm.id_supplier}
+                                getOptionLabel={(option) => `${option.name} (${option.alias})`}
+                
+                                inputValue={inputValue}
+                                onInputChange={(_, newInputValue) => {
+                                setInputValue(newInputValue); // 🔎 dispara la búsqueda
+                                }}
+                                // 🔑 aquí usamos tu handle para despachar el ID del supplier
+                                onChange={(_, newValue) => {
+                                entryDispatch({
+                                    type: "change-autocomplete-entry",
+                                    payload: { field: "id_supplier", value: newValue },
+                                });
+                                }}
+                                renderInput={(params) => (
+                                <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.supplier")} />
+                                )}
+                            />
+                            <a onClick={()=>setOpenSModal(!openSModal)} className="w-[20%] transition flex justify-center items-center rounded-md text-white text-4xl  bg-cyan-600  hover:bg-cyan-700 cursor-pointer">
+                                <BsBuildingFillAdd className="w-full" />
+                            </a>
+                        </div>
+                        <div className=" flex flex-row " >
+                            <Autocomplete
+                                className="w-full"
+                                id="id_client"
+                                disablePortal
+                                options={clients}
+                                // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
+                                value={entryState.entryForm.id_client}
+                                getOptionLabel={(option) => `${option.name} `}
+                
+                                inputValue={inputCValue}
+                                onInputChange={(_, newInputCValue) => {
+                                setInputCValue(newInputCValue); // 🔎 dispara la búsqueda
+                                }}
+                                // 🔑 aquí usamos tu handle para despachar el ID del client
+                                onChange={(_, newCValue) => {
+                                entryDispatch({
+                                    type: "change-autocomplete-entry",
+                                    payload: { field: "id_client", value: newCValue },
+                                });
+                                }}
+                                renderInput={(params) => (
+                                <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.client")} />
+                                )}
+                            />
+                            <a onClick={()=>setOpenCModal(!openCModal)} className="w-[20%] transition flex justify-center items-center rounded-md text-white text-4xl  bg-cyan-600  hover:bg-cyan-700 cursor-pointer">
+                                <IoMdPersonAdd className="w-full" />
+                            </a>
+                        </div>
 
                         <div className="col-span-2">
                             <label className="block text-sm font-semibold text-gray-800 mb-2 dark:text-cyan-300">
@@ -425,6 +443,8 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
                         </button>
                     </UserPermissions>
                 </div>
+                <SuppliersForm openModal={openSModal} setOpenModal={setOpenSModal} mode="create" call={"component"}/>
+                <ClientsForm openModal={openCModal} setOpenModal={setOpenCModal} mode="create" call={"component"}/>
             </div>
         </Modal>
     )

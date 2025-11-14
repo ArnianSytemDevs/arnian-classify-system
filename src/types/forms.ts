@@ -41,6 +41,7 @@ export type EntryForm = {
     id_coordinator:string;
     tax_id:string;
     invoice_number:string;
+    id_load: string;
     id_supplier:any;
     id_client:any;
     files:any[];

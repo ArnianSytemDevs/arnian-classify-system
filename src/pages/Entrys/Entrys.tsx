@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router';
 import { FaSearchDollar } from "react-icons/fa";
 import { checkRole } from '../../hooks/usePremission.controller';
 import UserPermissions from '../../hooks/usePremission';
+import Swal from 'sweetalert2';
 
 export default function Products() {
 
@@ -46,19 +47,63 @@ export default function Products() {
 
     /** 🔹 Eliminar registros seleccionados */
     const handleDeleteEntry = async () => {
-        if (entryState.entryList.length <= 0) return;
-        const confirmDelete = window.confirm(`${t("Entrys.confirmDelete", { defaultValue: "¿Deseas eliminar las entradas seleccionadas?" })}`);
-
-        if (!confirmDelete) return;
-
-        const success = await EntrysController.deleteEntrys(entryState.entryList,status);
-        if (success) {
-            alert(t("Entrys.alertSuccess", { defaultValue: "Entradas eliminadas correctamente." }));
-            setRefresh(prev => !prev); // 🔄 Forzar recarga del listado
-        } else {
-            alert(t("Entrys.alertError", { defaultValue: "Error al eliminar las entradas." }));
+        if (entryState.entryList.length <= 0) {
+            Swal.fire({
+            icon: "info",
+            title: t("Alerts.txtWarningNoentry", { defaultValue: "No hay entradas seleccionadas" }),
+            text: t("Alerts.txtWarningNoentryMsg", { defaultValue: "Selecciona una o más entradas antes de eliminar." }),
+            confirmButtonText: "Entendido",
+            confirmButtonColor: "#3085d6",
+            });
+            return;
         }
-    };
+
+        const confirm = await Swal.fire({
+            title: t("Entrys.confirmDelete", { defaultValue: "¿Deseas eliminar las entradas seleccionadas?" }),
+            text: t("Entrys.alertDeleteProductMsg", {
+            defaultValue: "Esta acción eliminará permanentemente las entradas seleccionadas. ¿Deseas continuar?",
+            }),
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: t("Entrys.btnDelete", { defaultValue: "Sí, eliminar" }),
+            cancelButtonText: t("Classify.alerts.txtReturnWarningDecline", { defaultValue: "Cancelar" }),
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+        });
+
+        if (!confirm.isConfirmed) {
+            Swal.fire({
+            icon: "info",
+            title: t("Entrys.cancelProcces", { defaultValue: "Operación cancelada" }),
+            text: t("Entrys.cancelProccesMsg", { defaultValue: "No se eliminaron las entradas." }),
+            timer: 1500,
+            showConfirmButton: false,
+            });
+            return;
+        }
+
+        // 🔥 Ejecutar eliminación
+        const success = await EntrysController.deleteEntrys(entryState.entryList, status);
+
+        if (success) {
+            Swal.fire({
+            icon: "success",
+            title: t("Entrys.alertDeleteProductOkMsg", { defaultValue: "Entradas eliminadas correctamente." }),
+            confirmButtonText: "OK",
+            confirmButtonColor: "#3085d6",
+            }).then(() => {
+            setRefresh((prev) => !prev); // 🔄 Forzar recarga del listado
+            });
+        } else {
+            Swal.fire({
+            icon: "error",
+            title: t("Entrys.alertError", { defaultValue: "Error al eliminar las entradas." }),
+            confirmButtonText: "OK",
+            confirmButtonColor: "#d33",
+            });
+        }
+        };
+
 
     return (
         <div className="w-full h-full flex flex-row">

@@ -26,6 +26,7 @@ export type Entry = {
     id_tax: string;
     invoice_number: string;
     id_supplier: string;
+    id_load:string;
     file: any; 
     is_disabled: boolean;
     id_status: Status['id'];

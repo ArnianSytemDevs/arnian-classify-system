@@ -10,6 +10,8 @@ import type { ChangeEvent } from "react";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { FaRegWindowClose } from "react-icons/fa";
 import UserPermissions from "../../hooks/usePremission";
+import { BsBuildingFillAdd } from "react-icons/bs";
+import SuppliersForm from "./SuppliersForm";
 
 type ProductFormProps = {
   openModal: boolean;
@@ -23,6 +25,7 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
   const [inputValue, setInputValue] = useState(""); // solo para búsqueda dinámica
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [measurement,setMeasurement] = useState<Measurement[]>([])
+  const [openSModal,setOpenSModal] =  useState(false)
   const [status,setStatus] = useState<Status[]>([])
   const { t } = useTranslation();
   const inputText = {
@@ -48,20 +51,27 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
     };
 
   useEffect(() => {
+    // Verifica que el modal esté abierto y el modo sea válido
     if (!openModal) return;
 
     const delay = setTimeout(() => {
-      const trimmed = inputValue.trim();
+        const trimmed = inputValue.trim();
 
-      ProductFormController.getSuppliers(trimmed !== "" ? trimmed : undefined, mode)
-        .then((resp: any) => {
-          setSuppliers(resp);
-        })
-        .catch((err) => console.error("❌ Error al cargar proveedores:", err));
-    }, 800); // Espera de 800ms para evitar spam al escribir
+        if (trimmed !== "") {
+        ProductFormController.getSuppliers(trimmed, "create")
+            .then((resp: any) => {
+              console.log("🚀 ~ ProductForm ~ resp:", resp)
+              return setSuppliers(resp);
+            })
+            .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+        } else {
+        setSuppliers([]); // limpia si no hay texto
+        }
+    }, 800); // 800 ms de espera
 
+    // Limpia el timeout al escribir otra vez o desmontar
     return () => clearTimeout(delay);
-  }, [inputValue, openModal, mode]);
+    }, [inputValue, openModal, mode]);
 
   useEffect(() => {
     if (!openModal) return;
@@ -87,7 +97,7 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
         console.error("❌ Error al cargar datos iniciales:", err);
       }
     })();
-  }, [openModal, mode, productState.productList]);
+  }, [openModal, mode]);
 
   useEffect(()=>{
     if(openModal == true && mode == 'edit' && measurement.length != 0 && status.length != 0 && suppliers.length != 0){
@@ -328,7 +338,7 @@ const renderPreview = (file: File | string) => {
                         color: "text.secondary", // icono flecha cambia con el modo
                     },
                 }}
-                value={productState.productForm.id_measurement.toString()}
+                value={productState.productForm.id_measurement || ""}
                 onChange={(e: SelectChangeEvent) =>
                     productDispatch({ type: "change-select", payload: { e: e } })
                 }
@@ -344,30 +354,36 @@ const renderPreview = (file: File | string) => {
 
             </div>
             {/* <TextField sx={inputText}  type="text" label="color" id="color" value={productState.productForm.color} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} fullWidth required /> */}
-            <Autocomplete
-              className="w-full"
-              id="id_supplier"
-              disablePortal
-              options={suppliers}
-              // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
-              value={productState.productForm.id_supplier}
-              getOptionLabel={(option) => `${option.name} (${option.alias})`}
+            <div className=" flex flex-row " >
+              <Autocomplete
+                className="w-[80%]"
+                id="id_supplier"
+                disablePortal
+                options={suppliers}
+                // 🔑 el value viene de tu reducer (ya guarda el ID seleccionado)
+                value={productState.productForm.id_supplier}
+                getOptionLabel={(option) => `${option.name} (${option.alias})`}
 
-              inputValue={inputValue}
-              onInputChange={(_, newInputValue) => {
+                inputValue={inputValue}
+                onInputChange={(_, newInputValue) => {
                 setInputValue(newInputValue); // 🔎 dispara la búsqueda
-              }}
-              // 🔑 aquí usamos tu handle para despachar el ID del supplier
-              onChange={(_, newValue) => {
+                }}
+                // 🔑 aquí usamos tu handle para despachar el ID del supplier
+                onChange={(_, newValue) => {
                 productDispatch({
-                  type: "change-autocomplete-entry",
-                  payload: { field: "id_supplier", value: newValue },
+                    type: "change-autocomplete-entry",
+                    payload: { field: "id_supplier", value: newValue },
                 });
-              }}
-              renderInput={(params) => (
-                <TextField sx={inputText} variant="filled" {...params} required label={t("products.form.lblSupplier")} />
-              )}
+                }}
+                renderInput={(params) => (
+                <TextField sx={inputText} variant='filled'  {...params} required label={t("Entrys.form.supplier")} />
+                )}
             />
+            <a onClick={()=>setOpenSModal(!openSModal)} className="w-[20%] transition flex justify-center items-center rounded-md text-white text-4xl  bg-cyan-600  hover:bg-cyan-700 cursor-pointer">
+              <BsBuildingFillAdd className="w-full" />
+            </a>
+
+            </div>
 
             {/* Archivos con preview */}
             <TextField sx={inputText} variant="filled" type="text" label={t("products.form.lblDescription")} id="description" value={productState.productForm.description} onChange={(e:ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>)=>productDispatch({ type:'change-textfield', payload:{e:e} })} multiline fullWidth required /> 
@@ -388,7 +404,7 @@ const renderPreview = (file: File | string) => {
                           file:rounded-md file:border-0 
                           file:text-sm file:font-semibold 
                           file:bg-cyan-600 file:text-white 
-                          hover:file:bg-cyan-700"
+                          hover:file:bg-cyan-700 transition"
               />
               <br/>
               {productState.productForm.files.length > 0 && (
@@ -441,6 +457,7 @@ const renderPreview = (file: File | string) => {
             </button>
           </UserPermissions>
         </div>
+        <SuppliersForm openModal={openSModal} setOpenModal={setOpenSModal} mode="create" call={"component"} />
       </div>
     </Modal>
   );

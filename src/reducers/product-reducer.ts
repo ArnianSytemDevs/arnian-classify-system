@@ -61,7 +61,7 @@ export const ProductReducer = (
         ...state,
         productForm: {
             ...state.productForm,
-            [field]: value, // guarda el objeto supplier completo
+            [field]: value, // guarda el objeto completo (supplier/client)
         },
         };
     }

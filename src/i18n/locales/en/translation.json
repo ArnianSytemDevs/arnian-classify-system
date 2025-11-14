@@ -19,6 +19,7 @@
         "btnGet": "Product list",
         "alerSucces": "The product has been successfully created",
         "alertError": "An error occurred while creating the product, please try again later",
+        "alertDeleteProduct":"The product will be removed and cannot be used in future classifications. Do you want to continue?",
         "btnCreateAdd": "Create and add product",
         "form": {
             "lblName": "Name",
@@ -53,10 +54,17 @@
             "created": "Created",
             "pkey": "Public identifier",
             "document": "Document",
-            "status": "Status"
+            "status": "Status",
+            "entry":"Entry Number",
+            "load":"Load Number"
         },
         "alerSucces": "The entry has been successfully created",
-        "alertError": "An error occurred while creating the entry, please try again later"
+        "alertError": "An error occurred while creating the entry, please try again later",
+        "alertDeleteProductMsg":"This entry will be deleted, just as its content will not be valid, it cannot be reversed later, do you want to continue?",
+        "confirmDelete":"Do you want to delete selected entries?",
+        "cancelProcces":"Operation cancelled",
+        "cancelProccesMsg":"Entries were not deleted.",
+        "alertDeleteProductOkMsg":"Entries deleted successfully."
     },
     "Classify": {
         "txtInfo": "General entry information",

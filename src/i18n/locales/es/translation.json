@@ -19,6 +19,7 @@
         "btnGet": "Lista de productos",
         "alerSucces": "El producto ha sido creado con éxito",
         "alertError": "Se produjo un error al crear el producto, inténtelo nuevamente más tarde",
+        "alertDeleteProduct":"El producto será eliminado y no podrá utilizarse en clasificaciones futuras. ¿Quieres continuar?",
         "btnCreateAdd": "Crear y agregar producto",
         "form": {
             "lblName": "Nombre",
@@ -53,10 +54,17 @@
             "created": "Creado",
             "pkey": "Identificador público",
             "document": "Documento",
-            "status": "Estatus"
+            "status": "Estatus",
+            "entry":"Numero de entrada",
+            "load":"Numero de carga"
         },
         "alerSucces": "La entrada ha sido creada con éxito",
-        "alertError": "Se produjo un error al crear la entrada, inténtelo nuevamente más tarde"
+        "alertError": "Se produjo un error al crear la entrada, inténtelo nuevamente más tarde",
+        "alertDeleteProductMsg":"Esta entrada será eliminada, así como su contenido no será válido, no se podrá revertir posteriormente, ¿quieres continuar?",
+        "confirmDelete":"¿Quieres eliminar las entradas seleccionadas?",
+        "cancelProcces":"Operación cancelada",
+        "cancelProccesMsg":"No se eliminaron las entradas.",
+        "alertDeleteProductOkMsg":"Entradas eliminadas correctamente."
     },
     "Classify": {
         "txtInfo": "Datos generales de la entrada",
