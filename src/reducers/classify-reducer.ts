@@ -43,6 +43,7 @@ export const ClassifyInitialState: ClassifyState = {
     packing_price:0,
     is_reviewed:false,
     is_classify:false,
+    id_load:"",
     other_price:0,
     total:0,
     total_limbs:0,
