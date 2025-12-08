@@ -16,10 +16,10 @@ export class ProductFormController {
 
             if (mode === "edit" && nameFilter) {
             // Buscar por ID
-            list = await getSupplierList(undefined, 10, { id: nameFilter });
+            list = await getSupplierList(undefined, undefined, { id: nameFilter });
             } else if (nameFilter) {
             // Buscar por nombre
-            list = await getSupplierList(undefined, 10, { name: nameFilter });
+            list = await getSupplierList(undefined, undefined, { name: nameFilter });
             } else {
             // 🔹 Si no hay filtros, obtener los últimos 10 creados
             list = await getSupplierList(1, 10, {}, true); // ⬅️ usamos nuevo parámetro "latest"

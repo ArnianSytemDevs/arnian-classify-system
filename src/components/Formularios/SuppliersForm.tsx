@@ -11,10 +11,11 @@ import UserPermissions from "../../hooks/usePremission";
     openModal: boolean;
     setOpenModal: React.Dispatch<React.SetStateAction<boolean>>;
     mode: string;
+    call?: string;
     status?: Status[];
     };
 
-    export default function SuppliersForm({ openModal, setOpenModal, mode }: SuppliersFormProps) {
+    export default function SuppliersForm({ openModal, setOpenModal, mode, call }: SuppliersFormProps) {
     const { suppliersState, suppliersDispatch, role } = useClassifyContext();
     const { t } = useTranslation();
 
@@ -98,7 +99,7 @@ import UserPermissions from "../../hooks/usePremission";
 
                 suppliersDispatch({ type: "clear-state" });
                 setOpenModal(false);
-                window.location.reload();
+                if(call != "component") window.location.reload()
             } else {
                 await Swal.fire({
                 icon: "error",
@@ -158,33 +159,7 @@ import UserPermissions from "../../hooks/usePremission";
         open={openModal}
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
         >
-        <div
-            className="
-            flex flex-col bg-white shadow-lg
-            w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2
-            transition-all duration-300
-            dark:bg-slate-800 dark:text-cyan-300
-            "
-        >
-            {/* HEADER */}
-            {/* <div className="flex items-center gap-3 p-4 border-b shadow-sm sticky top-0 bg-white dark:bg-slate-800 z-10">
-                <button
-                    onClick={() => setOpenModal(false)}
-                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-red-500 rounded-sm cursor-pointer"
-                >
-                    <IoMdCloseCircleOutline />
-                </button>
-                <button
-                    onClick={() => setOpenModal(false)}
-                    className="bg-gray-100 hover:bg-gray-300 p-1 text-3xl text-cyan-500 rounded-sm cursor-pointer"
-                >
-                    <TiMinusOutline />
-                </button>
-                <p className="ml-1 text-xl sm:text-3xl text-cyan-800 font-semibold dark:text-cyan-300">
-                    {mode === "edit" ? t("suppliers.edit") : t("suppliers.create")}
-                </p>
-            </div> */}
-
+        <div className=" flex flex-col bg-white shadow-lg w-full h-full sm:h-auto sm:max-h-[95vh] sm:w-11/12 md:w-3/4 lg:w-1/2 transition-all duration-300 dark:bg-slate-800 dark:text-cyan-300 ">
             {/* BODY */}
             <div className="overflow-auto p-5">
             <form className="grid grid-cols-2 gap-5" onSubmit={handleSubmit}>

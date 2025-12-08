@@ -12,6 +12,7 @@ import { ProductController } from './Product.controller';
 import { type Status } from '../../types/collections';
 import UserPermissions from '../../hooks/usePremission';
 import { checkRole } from '../../hooks/usePremission.controller';
+import Swal from 'sweetalert2';
 
 export default function Products() {
 
@@ -42,15 +43,46 @@ export default function Products() {
     }, []);
 
     const handleDeleteProduct = () => {
-        ProductController.deleteProducts(productState.productList).then( (resp) => {
-            if(resp){
-            window.alert(`${t("products.alerSucces")}`)
-            window.location.reload()
-            }else{
-            window.alert(`${t("products.alertError")}`)
+        Swal.fire({
+            title: t("Classify.alerts.txtRemoveProduct"),
+            text: t("products.alertDeleteProduct"),
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: t("products.btnDelete") || "Sí, eliminar",
+            cancelButtonText: t("Classify.alerts.txtReturnWarningDecline") || "Cancelar",
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+        }).then((result) => {
+            if (result.isConfirmed) {
+            ProductController.deleteProducts(productState.productList).then((resp) => {
+                if (resp) {
+                Swal.fire({
+                    icon: "success",
+                    title: t("products.alerSucces"),
+                    confirmButtonText: "OK",
+                }).then(() => {
+                    window.location.reload();
+                });
+                } else {
+                Swal.fire({
+                    icon: "error",
+                    title: t("products.alertError"),
+                    confirmButtonText: "OK",
+                });
+                }
+            });
+            } else {
+            Swal.fire({
+                icon: "info",
+                title: t("Classify.alerts.txtReturnWarningDecline") || "Operación cancelada",
+                text: "No se eliminaron los productos.",
+                timer: 1500,
+                showConfirmButton: false,
+            });
             }
-        })
-    }
+        });
+    };
+
 
 return (
     <>

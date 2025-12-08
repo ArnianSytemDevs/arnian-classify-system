@@ -243,7 +243,7 @@ export default function ProductList({ status }: ProductListProps) {
             {products.map((p) => (
               <tr
                 key={p.id}
-                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                className="hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer"
               >
                 <td className={thBody}>
                   <input
@@ -265,7 +265,7 @@ export default function ProductList({ status }: ProductListProps) {
                 <td className={thBody}>{p.model}</td>
                 <td className={`${thBody} max-w-70 line-clamp-3`}>{p.description}</td>
                 <td
-                  className={thBody}
+                  className={`${thBody} underline decoration-2` }
                   style={{
                     color: `#${status.find((st) => st.id === p.id_status)?.color || "FFF"}`,
                     fontWeight: "bold",

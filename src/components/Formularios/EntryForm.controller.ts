@@ -95,6 +95,7 @@ export class entryFormController {
         formData.append("id_author", Cookies.get("id") ?? "");
         formData.append("id_tax", entryForm.tax_id);
         formData.append("invoice_number", entryForm.invoice_number);
+        formData.append("id_load",entryForm.id_load);
         formData.append(
             "id_supplier",
             typeof entryForm.id_supplier === "string"

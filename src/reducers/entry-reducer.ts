@@ -1,7 +1,6 @@
 import type { ChangeEvent } from "react";
 import type { Clients, Entry, Status, Supplier } from "../types/collections"
 import type { EntryForm } from "../types/forms"
-import { v4 as uuidv4 } from 'uuid'
 
 export type EntrysActions = 
 { type: 'set-entry', payload:{ entry:Entry } } |
@@ -22,8 +21,9 @@ export type EntryState = {
 export const EntryInitialState : EntryState = {
     entryList:[],
     entryForm:{
-        public_key:`${uuidv4()}`,
+        public_key:``,
         id_coordinator:"",
+        id_load:"",
         tax_id:"",
         invoice_number:"",
         id_supplier:null,
@@ -112,6 +112,7 @@ export const EntryReducer = (
         id_coordinator: firstEntry.id_author,
         tax_id: firstEntry.id_tax,
         invoice_number: firstEntry.invoice_number,
+        id_load: firstEntry.id_load,
         id_supplier: action.payload.suppliers.find(
           (sp) => sp.id === firstEntry.id_supplier
         ),
