@@ -3,44 +3,48 @@ import { pb } from "./pocketbase";
 export class SessionManager {
     private static refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-    // 🧠 Inicializa la sesión persistente
     static init() {
-        console.log("🔐 Inicializando sesión persistente...");
+        console.log("🔐 Initializing persistent session...");
         pb.authStore.loadFromCookie(document.cookie);
 
-        // Activa almacenamiento local persistente
+        // 🔁 Sincronizar automáticamente cuando cambie el authStore
         pb.authStore.onChange(() => {
-        document.cookie = pb.authStore.exportToCookie({ httpOnly: false });
+        document.cookie = pb.authStore.exportToCookie({
+            httpOnly: false,
+            sameSite: "Lax",
+            secure: true
+        });
         });
 
-        // Si hay token válido, arrancamos el refresco automático
+        // Si hay sesión válida, inicia el refresco automático
         if (pb.authStore.isValid) {
+        console.log("✅ Valid session detected, starting auto-refresh");
         this.startAutoRefresh();
+        } else {
+        console.warn("⚠️ No valid session found");
         }
     }
 
-    // 🔁 Refresca el token cada cierto tiempo
     static startAutoRefresh(intervalMinutes = 15) {
-        // Limpia intervalos previos
         if (this.refreshInterval) clearInterval(this.refreshInterval);
 
         this.refreshInterval = setInterval(async () => {
         try {
             if (pb.authStore.isValid) {
             await pb.collection("users").authRefresh();
-            console.log("✅ Token de PocketBase renovado automáticamente");
+            console.log("♻️ PocketBase token automatically refreshed");
             }
         } catch (err) {
-            console.warn("⚠️ Fallo al refrescar token, limpiando sesión:", err);
+            console.warn("⚠️ Failed to refresh token, clearing session:", err);
             pb.authStore.clear();
         }
-        }, intervalMinutes * 60 * 1000); // cada 15 min (ajustable)
+        }, intervalMinutes * 60 * 1000);
     }
 
-    // 🚪 Limpia sesión completamente
     static clear() {
         if (this.refreshInterval) clearInterval(this.refreshInterval);
         pb.authStore.clear();
         document.cookie = "";
     }
 }
+
