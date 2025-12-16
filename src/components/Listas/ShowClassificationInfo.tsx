@@ -1,5 +1,5 @@
 import { Modal, TextField } from '@mui/material'
-import React, { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import { useTranslation } from 'react-i18next';
 import { useClassifyContext } from '../../hooks/useClassifyContext';
 import { ShowClassificationInfoController } from './ShowClassificationInfo.controller';

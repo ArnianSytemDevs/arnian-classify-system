@@ -2,7 +2,7 @@ import { getSupplierData, getSupplierList } from "../../helpers/pocketbase/Suppl
 import { getClientsList } from "../../helpers/pocketbase/Clients";
 import { getUnitsList } from "../../helpers/pocketbase/Units";
 import { getProductsList } from "../../helpers/pocketbase/Products";
-import type { Classification, Entry, Product } from "../../types/collections";
+import type { Entry, Product } from "../../types/collections";
 import type { classifyProduct } from "../../types/forms";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { getMeasurementsList } from "../../helpers/pocketbase/Measurement";
