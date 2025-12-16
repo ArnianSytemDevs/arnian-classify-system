@@ -8,13 +8,15 @@ import { Autocomplete, FormControl, MenuItem, Modal, Select, Switch, TextField, 
 import NoPhoto from "../../assets/NotPhoto.png"
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { useTranslation } from "react-i18next";
+import { FaSquare } from "react-icons/fa6";
+import { FaCheckSquare } from "react-icons/fa";
 
 type EntrysListProops = {
     status: Status[];
 };
 
 export default function EntrysList({ status }: EntrysListProops) {
-    const { entryDispatch } = useClassifyContext();
+    const { entryState,entryDispatch } = useClassifyContext();
     const [openMod, setOpenMod] = useState(false);
     const [entrys, setEntrys] = useState<Entry[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -26,6 +28,7 @@ export default function EntrysList({ status }: EntrysListProops) {
     const [filters, setFilters] = useState<EntryFilters>({
         id: "",
         public_key: "",
+        id_load:"",
         id_tax: "",
         invoice_number: "",
         is_disabled: false,
@@ -60,6 +63,28 @@ export default function EntrysList({ status }: EntrysListProops) {
             borderColor: "#0891b2", // cyan-600
         },
     }
+
+    const inputText2 = {
+    "& .MuiFilledInput-root": {
+        backgroundColor: "rgba(255,255,255,1)", // o usa theme.palette.background.paper
+        transition: "none",
+        "&:hover": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-focused": {
+        backgroundColor: "rgba(255,255,255,1)",
+        },
+        "&.Mui-disabled": {
+        backgroundColor: "rgba(255,255,255,0.7)",
+        },
+    },
+    "& .MuiInputBase-root": {
+        color: "text.primary",
+    },
+    "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#0891b2" },
+    };
 
     /* 🔹 Autocomplete suppliers */
     useEffect(() => {
@@ -195,6 +220,26 @@ export default function EntrysList({ status }: EntrysListProops) {
 
     return (
         <>
+        <div className=" p-5 gap-5 flex flex-row w-250 " >
+            <TextField
+            name="public_key"
+            sx={inputText2}
+            variant="filled"
+            label={t("Entrys.form.entry")}
+            value={filters.public_key}
+            onChange={handleChange}
+            fullWidth
+            />
+            <TextField
+            name="id_load"
+            sx={inputText2}
+            variant="filled"
+            label={t("Entrys.form.load")}
+            value={filters.id_load}
+            onChange={handleChange}
+            fullWidth
+            />
+        </div>
         <table className="w-full border-collapse">
             <thead className="border-b-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-slate-800">
             <tr>
@@ -209,6 +254,7 @@ export default function EntrysList({ status }: EntrysListProops) {
                 </button>
                 </th>
                 <th className={thHead}>{t("Entrys.form.entry")}</th>
+                <th className={thHead}>{t("Entrys.form.load")}</th>
                 <th className={thHead}>{t("Entrys.form.document")}</th>
                 <th className={thHead}>TAX ID</th>
                 <th className={thHead}>{t("Entrys.form.invoice")}</th>
@@ -220,24 +266,24 @@ export default function EntrysList({ status }: EntrysListProops) {
             {entrys.map((ent) => (
                 <tr
                 key={ent.id}
-                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition "
+                onClick={() => {
+                    entryDispatch({
+                    type: "change-box",
+                    payload: {
+                        entry: ent,
+                        status: !entryState.entryList.some(item => item.id === ent.id),
+                    },
+                    });
+                }}
+                className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer "
                 >
                 <td className={thBody}>
-                    <input
-                    className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                    type="checkbox"
-                    onChange={(e) => {
-                        entryDispatch({
-                        type: "change-box",
-                        payload: {
-                            entry: ent,
-                            status: e.target.checked,
-                        },
-                        });
-                    }}
-                    />
+                {
+                    entryState.entryList.some(item => item.id === ent.id)?(<FaCheckSquare className=" text-xl text-sky-600 border-1 border-gray-500 rounded-xs " />):(<FaSquare className=" text-xl text-white border-1 border-gray-500 rounded-xs " />)
+                }
                 </td>
                 <td className={thBody}>{ent.public_key}</td>
+                <td className={thBody}>{ ent.id_load }</td>
                 <td className={thBody}  >{renderImage(ent.file,ent)}</td>
                 <td className={thBody}>{ent.id_tax}</td>
                 <td className={thBody}>{ent.invoice_number}</td>
@@ -287,6 +333,14 @@ export default function EntrysList({ status }: EntrysListProops) {
                         name="public_key"
                         label={t("Entrys.form.entry")}
                         value={filters.public_key}
+                        onChange={handleChange}
+                        fullWidth
+                        />
+                        <TextField
+                        sx={inputText}
+                        name="id_load"
+                        label={t("Entrys.form.load")}
+                        value={filters.id_load}
                         onChange={handleChange}
                         fullWidth
                         />

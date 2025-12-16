@@ -125,13 +125,16 @@ export const ClassifyReducer = (
                   type === "checkbox"
                     ? (target as HTMLInputElement).checked
                     : type === "number"
-                    ? Number(value)
+                    ? value === ""
+                      ? null
+                      : Number(value)
                     : value,
               }
             : p
         ),
       };
     }
+
 
 
     // 🔘 Select

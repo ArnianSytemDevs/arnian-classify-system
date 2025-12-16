@@ -4,13 +4,14 @@
     import { SuppliersController } from "./SupplierList.controller";
     import { FormControl, MenuItem, Modal, Select, Switch, TextField, type SelectChangeEvent } from "@mui/material";
     import { useClassifyContext } from "../../hooks/useClassifyContext";
-
+    import { FaSquare } from "react-icons/fa6";
+    import { FaCheckSquare } from "react-icons/fa";
     type SuppliersListProps = {
     status: Status[];
     };
 
     export default function SuppliersList({ status }: SuppliersListProps) {
-    const { suppliersDispatch } = useClassifyContext();
+    const { suppliersState,suppliersDispatch } = useClassifyContext();
     const [openMod, setOpenMod] = useState(false);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [filters, setFilters] = useState({
@@ -104,18 +105,20 @@
                 <tr
                 key={sp.id}
                 className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+                onClick={() =>
+                    suppliersDispatch({
+                    type: "change-box",
+                    payload: {
+                        supplier: sp,
+                        status: !suppliersState.supplierList.some(item => item.id === sp.id),
+                    },
+                    })
+                }
                 >
                 <td className="px-5 py-4 text-sm font-mono text-gray-800 dark:text-gray-200">
-                    <input
-                    className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                    type="checkbox"
-                    onChange={(e) =>
-                        suppliersDispatch({
-                        type: "change-box",
-                        payload: { supplier: sp, status: e.target.checked },
-                        })
-                    }
-                    />
+                {
+                    suppliersState.supplierList.some(item => item.id === sp.id)?(<FaCheckSquare className=" text-xl text-sky-600 border-1 border-gray-500 rounded-xs " />):(<FaSquare className=" text-xl text-white border-1 border-gray-500 rounded-xs " />)
+                }
                 </td>
                 <td className="px-5 py-4 text-sm text-gray-800 dark:text-gray-200">{sp.name}</td>
                 <td className="px-5 py-4 text-sm text-gray-800 dark:text-gray-200">{sp.alias}</td>

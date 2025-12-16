@@ -17,13 +17,14 @@
         "btnUpdate": "Actualizar producto",
         "btnDelete": "Eliminar producto",
         "btnGet": "Lista de productos",
+        "btnClassify":"Revisar clasificacion",
         "alerSucces": "El producto ha sido creado con éxito",
         "alertError": "Se produjo un error al crear el producto, inténtelo nuevamente más tarde",
         "alertDeleteProduct":"El producto será eliminado y no podrá utilizarse en clasificaciones futuras. ¿Quieres continuar?",
         "btnCreateAdd": "Crear y agregar producto",
         "form": {
             "lblName": "Nombre",
-            "lblAlias": "Alias",
+            "lblAlias": "Alias de producto",
             "lblCode": "Código",
             "lblPart_number": "Número de parte",
             "lblModel": "Modelo",
@@ -64,7 +65,16 @@
         "confirmDelete":"¿Quieres eliminar las entradas seleccionadas?",
         "cancelProcces":"Operación cancelada",
         "cancelProccesMsg":"No se eliminaron las entradas.",
-        "alertDeleteProductOkMsg":"Entradas eliminadas correctamente."
+        "alertDeleteProductOkMsg":"Entradas eliminadas correctamente.",
+        "alertInfoTitle":"¡Nota importante!",
+        "alertInfoCreate":[
+            "Facturas con información completa: Dirección, Razón Social Completa y TAX ID (NO P.O. BOX).",
+            "No tachaduras.",
+            "No descuentos que al final no podrán ser aplicados.",
+            "Es importante revisar ANTES de mandarlas. Si se envían con incidencias, se retirará la entrada para no retrasar importaciones.",
+            "Indicar si es solo para revisión o para acumular volumen, dependiendo del proveedor."
+        ],
+        "alertPlusNote":"CADA ENTRADA QUE SOLICITEN DEBERÁN ADJUNTAR TAMBIÉN LA FACTURA QUE LE CORRESPONDE AL PROPIO CORREO"
     },
     "Classify": {
         "txtInfo": "Datos generales de la entrada",
@@ -122,6 +132,8 @@
             "txtUnderstood": "Entendido",
             "txtSaveProduct": "Producto guardado",
             "txtSaveProductMsg": "La información fue almacenada correctamente.",
+            "txtCheckClassifyProductTitle":"Sin clasificar",
+            "txtCheckClassifyProductText":"Este producto aun no cuenta con una revision y o clasificacion.",
             "txtErrorProduct": "Error al guardar",
             "txtRemoveProduct": "¿Eliminar producto?",
             "txtRemoveProductMsg": "Esta acción eliminará el producto del listado. ¿Deseas continuar?",

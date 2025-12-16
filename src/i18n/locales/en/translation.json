@@ -23,7 +23,7 @@
         "btnCreateAdd": "Create and add product",
         "form": {
             "lblName": "Name",
-            "lblAlias": "Alias",
+            "lblAlias": "Product alias",
             "lblCode": "Code",
             "lblPart_number": "Part number",
             "lblModel": "Model",
@@ -64,7 +64,16 @@
         "confirmDelete":"Do you want to delete selected entries?",
         "cancelProcces":"Operation cancelled",
         "cancelProccesMsg":"Entries were not deleted.",
-        "alertDeleteProductOkMsg":"Entries deleted successfully."
+        "alertDeleteProductOkMsg":"Entries deleted successfully.",
+        "alertInfoTitle":"¡Important Note!",
+        "alertInfoCreate": [
+            "Invoices with complete information: Address, Full Legal Name, and TAX ID (NO P.O. BOX).",
+            "No erasures or alterations.",
+            "No discounts that will ultimately not be applicable.",
+            "It is important to review BEFORE sending. If submitted with any of the above issues, the entry will be removed to avoid import delays.",
+            "Indicate whether it is for review only or for volume accumulation, depending on the supplier."
+        ],
+        "alertPlusNote":"EACH ENTRY THEY REQUEST MUST ALSO ATTACH THE CORRESPONDING INVOICE TO THE EMAIL ITSELF"
     },
     "Classify": {
         "txtInfo": "General entry information",
@@ -122,6 +131,8 @@
             "txtUnderstood": "Understood",
             "txtSaveProduct": "Product saved",
             "txtSaveProductMsg": "The information was successfully stored.",
+            "txtCheckClassifyProductTitle":"Unrated",
+            "txtCheckClassifyProductText":"This product does not yet have a review or rating.",
             "txtErrorProduct": "Error saving",
             "txtRemoveProduct": "Delete product?",
             "txtRemoveProductMsg": "This action will remove the product from the list. Do you want to continue?",
