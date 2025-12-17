@@ -22,7 +22,8 @@ export const rolePermissions = {
         "saveReview",
         "cancelProcess",
         "closeClassify",
-        "addProduct"
+        "addProduct",
+        "checkClassifyInfo"
     ],
     Admin:[
         "editProducts",
@@ -41,6 +42,7 @@ export const rolePermissions = {
         "saveClient",
         "cancelProcess",
         "closeClassify",
+        "checkClassifyInfo"
     ],
     Coordinator:[
         "createProducts",
@@ -55,6 +57,7 @@ export const rolePermissions = {
         "saveClassify",
         "saveReview",
         "cancelProcess",
+        "checkClassifyInfo"
     ],
     Reviewer:[
         "createProducts",
@@ -71,7 +74,8 @@ export const rolePermissions = {
         "classify",
         "saveReview",
         "cancelProcess",
-        "addProduct"
+        "addProduct",
+        "checkClassifyInfo"
     ],
     Classifier:[
         "createProducts",
@@ -87,12 +91,14 @@ export const rolePermissions = {
         "classify",
         "saveClassify",
         "cancelProcess",
-        "addProduct"
+        "addProduct",
+        "checkClassifyInfo"
     ],
     Accunting:[
         "editProducts",
         "editClient",
         "editSuppliers",
         "editEntry",
+        "checkClassifyInfo"
     ]
 }

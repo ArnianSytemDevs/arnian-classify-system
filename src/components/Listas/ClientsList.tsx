@@ -4,6 +4,8 @@ import type { Clients, Status } from "../../types/collections";
 import { ClientsController } from "./ClientsList.controller";
 import { FormControl, MenuItem, Modal, Select, Switch, TextField, type SelectChangeEvent} from "@mui/material";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
+import { FaSquare } from "react-icons/fa6";
+import { FaCheckSquare } from "react-icons/fa";
 
 type ClientListProops = {
   status:Status[]
@@ -11,7 +13,7 @@ type ClientListProops = {
 
 export default function ClientsList({status}:ClientListProops) {
 
-  const {clientsDispatch} = useClassifyContext()
+  const { clientsState,clientsDispatch } = useClassifyContext()
   const [openMod, setOpenMod] = useState(false);
   const [clients, setClients] = useState<Clients[]>([]);
   const [filters, setFilters] = useState({
@@ -106,13 +108,12 @@ export default function ClientsList({status}:ClientListProops) {
             <tr
               key={cl.id}
               className="hover:bg-gray-100 dark:hover:bg-slate-700 transition cursor-pointer"
+              onClick={() => { clientsDispatch({type: "change-box", payload:{ client:cl,status:!clientsState.clientList.some(item => item.id === cl.id) }}) }}
             >
               <td className={thBody}>
-                <input
-                  className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                  type="checkbox"
-                  onChange={(e) => { clientsDispatch({type: "change-box", payload:{ client:cl,status: e.target.checked }}) }}
-                />
+                {
+                    clientsState.clientList.some(item => item.id === cl.id)?(<FaCheckSquare className=" text-xl text-sky-600 border-1 border-gray-500 rounded-xs " />):(<FaSquare className=" text-xl text-white border-1 border-gray-500 rounded-xs " />)
+                }
               </td>
               <td className={thBody}>{cl.name}</td>
               <td className={thBody}>{cl.alias}</td>

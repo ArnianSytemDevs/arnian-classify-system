@@ -270,7 +270,7 @@ export default function Classify() {
                 title: t("Classify.alerts.txtWarningProds"),
                 html: `<p>${t("Classify.alerts.txtWarningProdsMsg")}:</p>
                     <p class="text-rose-600 font-semibold mt-2">${fieldNames}</p>`,
-                confirmButtonText: t("Classify.alerts.Understood"),
+                confirmButtonText: t("Classify.alerts.txtUnderstood"),
                 confirmButtonColor: "#3085d6",
                 background: "#f9fafb",
                 color: "#1e293b",
@@ -630,8 +630,8 @@ export default function Classify() {
             if (result.status === "success") {
                 await Swal.fire({
                     icon: "success",
-                    title: t("Classify.alerts.xtFinalizeEntryOk"),
-                    text: t("Classify.alerts.xtFinalizeEntryOkMsg"),
+                    title: t("Classify.alerts.txtFinalizeEntryOk"),
+                    text: t("Classify.alerts.txtFinalizeEntryOkMsg"),
                     confirmButtonColor: "#22c55e",
                 });
 
@@ -645,15 +645,15 @@ export default function Classify() {
             if (result.status === "warning") {
                 await Swal.fire({
                     icon: "warning",
-                    title: t("Classify.alerts.xtFinalizeEntryWarning"),
-                    text: t("Classify.alerts.xtFinalizeEntryWarningMsg"),
+                    title: t("Classify.alerts.txtFinalizeEntryWarning"),
+                    text: t("Classify.alerts.txtFinalizeEntryWarningMsg"),
                     confirmButtonColor: "#f59e0b",
                 });
             } else {
                 await Swal.fire({
                     icon: "error",
-                    title: t("Classify.alerts.xtFinalizeEntryError"),
-                    text: t("Classify.alerts.xtFinalizeEntryErrorMsg"),
+                    title: t("Classify.alerts.txtFinalizeEntryError"),
+                    text: t("Classify.alerts.txtFinalizeEntryErrorMsg"),
                     confirmButtonColor: "#ef4444",
                 });
             }
@@ -661,8 +661,8 @@ export default function Classify() {
             console.error("❌ Error al finalizar entrada:", err);
             await Swal.fire({
                 icon: "error",
-                title: t("Classify.alerts.xtFinalizeEntrySys"),
-                text: t("Classify.alerts.xtFinalizeEntrySysMsg"),
+                title: t("Classify.alerts.txtFinalizeEntrySys"),
+                text: t("Classify.alerts.txtFinalizeEntrySysMsg"),
                 confirmButtonColor: "#ef4444",
             });
         }
@@ -878,7 +878,7 @@ export default function Classify() {
                         </button>
                     </UserPermissions>
                     {
-                        !classifyState.entrySelected.is_classify && !classifyState.entrySelected.is_reviewed ? (
+                        classifyState.entrySelected.is_classify && classifyState.entrySelected.is_reviewed ? (
                             <UserPermissions permission="closeClassify" role={role} >
                                 <button
                                     onClick={()=>{ handleFinishEntry() }}

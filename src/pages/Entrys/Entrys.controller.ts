@@ -55,9 +55,9 @@ export class EntrysController{
 
             // ✅ Feedback visual para el usuario
             if (blockedCount > 0 && blockedCount < total) {
-                alert(`⚠️ ${blockedCount} de ${total} registro(s) no pudieron eliminarse por tener un estatus no válido (Edit o Finished).`);
+                console.log(`⚠️ ${blockedCount} de ${total} registro(s) no pudieron eliminarse por tener un estatus no válido (Edit o Finished).`);
             } else if (blockedCount === total) {
-                alert("⛔ Ningún registro pudo eliminarse. Todos tienen un estatus bloqueado (Edit o Finished).");
+                console.log("⛔ Ningún registro pudo eliminarse. Todos tienen un estatus bloqueado (Edit o Finished).");
                 return false;
             }
 

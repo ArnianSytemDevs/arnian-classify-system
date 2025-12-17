@@ -167,18 +167,26 @@ export class ClassifyController {
             lote: "",
             batch: "",
             quantity: 0,
-            id_supplier: "",      // <- dejamos el id aquí
-            supplier: null,       // <- y el objeto completo aquí
+            description: product.description || "",
+            id_supplier: "",
+            supplier: null,
+
             origin_country: "",
             seller_country: "",
+
             weight: product.weight || 0,
             net_weight: 0,
+
             type_weight: null,
+
             brand: product.brand || "",
             model: product.model || "",
             serial_number: product.serial_number || "",
+
             unit_price: product.unit_price || 0,
+            
             unit_weight: null,
+
             tariff_fraction: 0,
             parts_number: 0,
             item: "",
@@ -186,25 +194,90 @@ export class ClassifyController {
         };
 
         try {
+            // ===============================
+            // ✅ 1. OBTENER PROVEEDOR
+            // ===============================
             if (product.id_supplier) {
             const supplierData = await getSupplierData(product.id_supplier);
 
             if (supplierData) {
-                formatted.id_supplier = supplierData.id; // 🔹 solo el id
-                formatted.supplier = {                   // 🔹 objeto completo
-                id: supplierData.id,
-                name: supplierData.name,
-                rfc: supplierData.rfc,
-                email: supplierData.email,
-                alias: supplierData.alias,
-                phone_number: supplierData.phone_number,
-                address: supplierData.address,
-                postal_code: supplierData.postal_code,
+                formatted.id_supplier = supplierData.id;
+                formatted.supplier = {
+                    id: supplierData.id,
+                    name: supplierData.name,
+                    rfc: supplierData.rfc,
+                    email: supplierData.email,
+                    alias: supplierData.alias,
+                    phone_number: supplierData.phone_number,
+                    address: supplierData.address,
+                    postal_code: supplierData.postal_code,
                 };
             }
             }
-        } catch (error) {
-            console.error("❌ Error al obtener información del proveedor:", error);
+
+            // ===============================
+            // ✅ 2. OBTENER CATÁLOGOS
+            // ===============================
+            const [unitsResponse, measurementsResponse] = await Promise.all([
+            getUnitsList(1, 100),
+            getMeasurementsList(1, 100),
+            ]);
+
+            const units = unitsResponse?.items || [];
+            const measurements = measurementsResponse?.items || [];
+
+            // ===============================
+            // ✅ 3. BUSCAR CLASIFICACIÓN ACTIVA
+            // ===============================
+            const classification = await pb
+            .collection("Classiffication")
+            .getFirstListItem(
+                `id_product.id = "${product.id}" && deprected = false`,
+                { expand: "id_supplier" }
+            )
+            .catch(() => null);
+
+            if (classification) {
+            // ===============================
+            // ✅ 4. ASIGNAR DATOS DE CLASIFICACIÓN
+            // ===============================
+            formatted.quantity = classification.quantity ?? 0;
+            formatted.origin_country = classification.origin_country || "";
+            formatted.seller_country = classification.origin_seller || "";
+            formatted.net_weight = classification.net_weight || 0;
+            formatted.comments = classification.comments || "";
+            formatted.tariff_fraction = classification.tariff_fraction.toString() || 0;
+            formatted.parts_number = classification.partys || 0;
+            formatted.item = classification.item || "";
+            formatted.lumps = classification.lumps || 0;
+
+            // ===============================
+            // ✅ 5. TIPO DE PESO (UNIDAD)
+            // ===============================
+            const unitType =
+                units.find((un: any) => un.id === classification.unit_type) || null;
+
+            formatted.type_weight = unitType
+                ? { id: unitType.id, name: unitType.name }
+                : null;
+
+            // ===============================
+            // ✅ 6. UNIDAD DE PESO (MEDICIÓN)
+            // ===============================
+            const unitWeight =
+                measurements.find((ms: any) => ms.id === classification.unit_weight) || null;
+
+            formatted.unit_weight = unitWeight
+                ? { id: unitWeight.id, name: unitWeight.name }
+                : null;
+            }
+
+        } catch (error: any) {
+            console.error("❌ Error en formatProd:", {
+            message: error.message,
+            data: error.data,
+            status: error.status,
+            });
         }
 
         return formatted;
@@ -212,101 +285,186 @@ export class ClassifyController {
     
     public static async saveProductClassification(entry: Entry, product: classifyProduct) {
         try {
-            // 1️⃣ Verificar que haya una entrada seleccionada
-            if (!entry?.id) throw new Error("No hay entrada activa.");
+            if (!entry?.id) {
+                throw new Error("No hay entrada activa.");
+            }
 
-            // 2️⃣ Verificar si ya existe un Entry_product vinculado
-            let entryProduct = await pb
-            .collection("Entry_products")
-            .getFirstListItem(
-                `id_entry="${entry.id}" && id_product="${product.id_product}"`,
-                { requestKey: null }
-            )
-            .catch(() => null);
+            // =====================================
+            // 1️⃣ ENTRY_PRODUCT
+            // =====================================
+            let entryProduct: any = await pb
+                .collection("Entry_products")
+                .getFirstListItem(
+                    `id_entry="${entry.id}" && id_product="${product.id_product}"`,
+                    { requestKey: null }
+                )
+                .catch(() => null);
 
-            // 3️⃣ Crear o actualizar Entry_product (según el rol)
             const entryProductData = {
-            id_entry: entry.id,
-            id_product: product.id_product,
-            unit_price: Number(product.unit_price) || 0,
-            is_damage: Boolean(product.damage),
-            is_outrank: Boolean(product.is_outrank),
-            is_shortage: Boolean(product.is_shortage),
-            lote: product.lote || "",
-            batch: product.batch || "",
+                id_entry: entry.id,
+                id_product: product.id_product,
+                unit_price: Number(product.unit_price ?? 0),
+                is_damage: Boolean(product.damage),
+                is_outrank: Boolean(product.is_outrank),
+                is_shortage: Boolean(product.is_shortage),
+                lote: product.lote || "",
+                batch: product.batch || "",
             };
 
             if (!entryProduct) {
-            entryProduct = await pb.collection("Entry_products").create(entryProductData);
+                entryProduct = await pb.collection("Entry_products").create(entryProductData);
             } else {
-            await pb.collection("Entry_products").update(entryProduct.id, entryProductData);
+                await pb.collection("Entry_products").update(entryProduct.id, entryProductData);
             }
 
+            // =====================================
+            // 2️⃣ NORMALIZAR DATOS DE CLASIFICACIÓN
+            // =====================================
+            const normalize = {
+                tariff_fraction: Number(product.tariff_fraction ?? 0),
+                lumps: Number(product.lumps ?? 0),
+                item: String(product.item ?? ""),
+                comments: String(product.comments ?? ""),
 
-            // 4️⃣ Construcción del cuerpo de clasificación
-            const classificationData = {
-            public_key: product.public_key,
-            id_entry: entry.id,
-            id_product: product.id_product,
-            tariff_fraction: product.tariff_fraction || 0,
-            lumps: Number(product.lumps) || 0,
-            field: 0,
-            item: String(product.item || ""),
-            description: String(product.description || ""), // 🆕 Nuevo campo editable por el clasificador
-            comments: String(product.comments||""),
-            origin_country:
-                typeof product.origin_country === "object"
-                ? JSON.stringify(product.origin_country)
-                : product.origin_country || "",
-            origin_seller:
-                typeof product.seller_country === "object"
-                ? JSON.stringify(product.seller_country)
-                : product.seller_country || "",
-            quantity: Number(product.quantity) || 0,
-            net_weight: Number(product.net_weight) || 0,
-            partys: Number(product.parts_number) || 0,
-            unit_type:
-                typeof product.type_weight === "object"
-                ? product.type_weight.id
-                : product.type_weight || "",
-            unit_weight:
-                typeof product.unit_weight === "object"
-                ? product.unit_weight.id
-                : product.unit_weight || "",
-            deprected: false,
+                origin_country:
+                    typeof product.origin_country === "object"
+                        ? JSON.stringify(product.origin_country)
+                        : product.origin_country || "",
+
+                origin_seller:
+                    typeof product.seller_country === "object"
+                        ? JSON.stringify(product.seller_country)
+                        : product.seller_country || "",
+
+                quantity: Number(product.quantity ?? 0),
+                net_weight: Number(product.net_weight ?? 0),
+                partys: Number(product.parts_number ?? 0),
+
+                unit_type:
+                    typeof product.type_weight === "object"
+                        ? product.type_weight.id
+                        : product.type_weight || "",
+
+                unit_weight:
+                    typeof product.unit_weight === "object"
+                        ? product.unit_weight.id
+                        : product.unit_weight || "",
             };
 
-            // 5️⃣ Crear o actualizar registro en Classification
-            const existingClassification = await pb
-            .collection("Classiffication")
-            .getFirstListItem(`public_key="${product.public_key}"`, { requestKey: null })
-            .catch(() => null);
-
-            let classificationRecord;
-
-            if (existingClassification) {
-            classificationRecord = await pb
+            const idClassifyProduct: any = await pb
                 .collection("Classiffication")
-                .update(existingClassification.id, classificationData);
-            } else {
-            classificationRecord = await pb
-                .collection("Classiffication")
-                .create(classificationData);
+                .getFirstListItem(
+                    `id_product.id = "${product.id_product}" && deprected = false`
+                )
+                .catch(() => null);
+
+            // =====================================
+            // 3️⃣ CLASIFICACIÓN ACTUAL
+            // =====================================
+            let currentClassification: any = null;
+
+            if (idClassifyProduct) {
+                currentClassification = await pb
+                    .collection("Classiffication")
+                    .getOne(idClassifyProduct.id)
+                    .catch(() => null);
             }
 
-            // 6️⃣ Retornar resultado unificado
-            return {
-            status: "success",
-            entryProductId: entryProduct?.id,
-            classificationId: classificationRecord.id,
-            };
-        } catch (error: any) {
-            console.error("❌ Error al guardar clasificación individual:", error);
-            return {
-            status: "error",
-            message: error.message || "Error al guardar producto",
-            };
-        }
+            // =====================================
+            // 4️⃣ DETECCIÓN DE CAMBIOS
+            // =====================================
+
+            // 🔹 Cambio en fracción arancelaria
+            const hasTariffChanged =
+                normalize.tariff_fraction != currentClassification?.tariff_fraction;
+
+            // 🔹 Cambio en otros campos
+            const otherFieldsChanged =
+                normalize.lumps != currentClassification?.lumps ||
+                normalize.item != currentClassification?.item ||
+                normalize.comments != currentClassification?.comments ||
+                // normalize.origin_country !== currentClassification?.origin_country ||
+                // normalize.origin_seller !== currentClassification?.origin_seller ||
+                normalize.quantity != currentClassification?.quantity ||
+                normalize.net_weight != currentClassification?.net_weight ||
+                normalize.partys !== currentClassification?.partys ||
+                normalize.unit_type != currentClassification?.unit_type ||
+                normalize.unit_weight != currentClassification?.unit_weight;
+
+            // 🔹 Fracción estaba vacía antes
+            const wasTariffEmpty =
+                !currentClassification ||
+                currentClassification.tariff_fraction == "" ||
+                currentClassification.tariff_fraction == 0;
+
+            // =====================================
+            // 🟢 CASO A: NO CAMBIÓ NADA
+            // =====================================
+            if (hasTariffChanged == false && otherFieldsChanged == false && currentClassification != null) {
+                if(idClassifyProduct != null){
+                    await pb.collection("Entry_products").update(entryProduct.id, {  
+                        id_classification: idClassifyProduct.id,  
+                    });
+                }
+
+                return {
+                    status: "success",
+                    entryProductId: entryProduct.id,
+                    classificationId: currentClassification.id,
+                    reused: true,
+                };
+            }
+
+            // =====================================
+            // 🟡 CASO B: SOLO SE COMPLETA FRACCIÓN
+            // =====================================
+            else if ( hasTariffChanged == true && wasTariffEmpty == true && otherFieldsChanged == false && currentClassification != null ) {
+                const updated = await pb.collection("Classiffication").update( currentClassification.id,{tariff_fraction: normalize.tariff_fraction,});
+
+                return {
+                    status: "success",
+                    entryProductId: entryProduct.id,
+                    classificationId: updated.id,
+                    reused: true,
+                    updatedTariffOnly: true,
+                };
+            }
+
+            // =====================================
+            // 🔴 CASO C: CAMBIO REAL → NUEVA
+            // =====================================
+            else {
+                if (currentClassification != null){
+                    await pb.collection("Classiffication").update( currentClassification.id, { deprected: true });
+                }
+                
+                const newClassification = await pb.collection("Classiffication").create({ 
+                    public_key: product.public_key,  
+                    id_entry: entry.id,  
+                    id_product: product.id_product,  
+                    ...normalize,  
+                    deprected: false,  
+                });
+    
+                await pb.collection("Entry_products").update(entryProduct.id, {  
+                    id_classification: newClassification.id,  
+                });
+    
+                return {  
+                    status: "success", 
+                    entryProductId: entryProduct.id,  
+                    classificationId: newClassification.id,  
+                    reused: false,  
+                }; 
+            }
+
+        } catch (error: any) {  
+            console.error("❌ Error al guardar clasificación:", error); 
+            return {  
+                status: "error", 
+                message: error.message || "Error al guardar producto", 
+            }; 
+        }  
     }
 
     public static async getClassifyByEntry(idEntry: string): Promise<classifyProduct[]> {

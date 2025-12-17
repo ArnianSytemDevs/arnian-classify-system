@@ -13,6 +13,8 @@ import { type Status } from '../../types/collections';
 import UserPermissions from '../../hooks/usePremission';
 import { checkRole } from '../../hooks/usePremission.controller';
 import Swal from 'sweetalert2';
+import { HiClipboardDocumentList } from "react-icons/hi2";
+import ShowClassificationInfo from '../../components/Listas/ShowClassificationInfo';
 
 export default function Products() {
 
@@ -22,6 +24,7 @@ export default function Products() {
     const [option,setOption] = useState(1)
     const [status,setStatus] = useState<Status[]>([])
     const [open,setOpen] = useState(false)
+    const [openClass,setOpenClass] = useState(false)
     const btnBase =
         "px-5 py-3 rounded-md w-full transition items-center justify-left flex flex-rows gap-2";
     const btnUnselected = `${btnBase} hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-800 dark:text-gray-200 cursor-pointer`;
@@ -105,6 +108,10 @@ return (
                 <UserPermissions permission='deleteProducts' role={role} >
                     <button  disabled={productState.productList.length <= 0 } onClick={()=>{ handleDeleteProduct() }} className={ productState.productList.length == 0 ? btnDisabled : option == 4? btnSelected:btnUnselected } > < FaTrashAlt className=' text-md ' /> {t("products.btnDelete")}</button>
                 </UserPermissions>
+                <br></br>
+                <UserPermissions permission='checkClassifyInfo' role={role} >
+                    <button disabled={productState.productList.length > 1 || productState.productList.length == 0 } onClick={()=>{ setOpenClass(!openClass) }} className={ productState.productList.length >> 1 || productState.productList.length == 0 ? btnDisabled : option == 3? btnSelected:btnUnselected }  > < HiClipboardDocumentList className=' text-md ' /> {t("products.btnClassify")}</button>
+                </UserPermissions>
             </div>
             <div className=' w-full h-full dark:bg-slate-800 dark:text-cyan-300 ' >
                 <div className=' px-5 py-5 flex flex-row w-full items-center ' >
@@ -114,6 +121,7 @@ return (
                 <ProductList status={status} />
             </div>
             <ProductForm setOpenModal={setOpen} openModal={open} mode={mode} />
+            <ShowClassificationInfo openModal={openClass} setOpenModal={setOpenClass} />
         </div>
     </>
 )
