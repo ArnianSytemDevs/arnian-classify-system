@@ -10,21 +10,21 @@ import type { Dispatch } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 export class ProductFormController {
-    public static async getSuppliers(nameFilter: string | undefined, mode: string) {
+    public static async getSuppliers(nameFilter: string | undefined, mode: string, isPrefilled = false) {
         try {
             let list;
+            const hasValue = typeof nameFilter === "string" && nameFilter.trim() !== "";
 
-            if (mode === "edit" && nameFilter) {
+            if (mode === "edit" && isPrefilled && hasValue) {
             // Buscar por ID
             list = await getSupplierList(undefined, undefined, { id: nameFilter });
-            } else if (nameFilter) {
+            } else if (hasValue) {
             // Buscar por nombre
             list = await getSupplierList(undefined, undefined, { name: nameFilter });
             } else {
             // 🔹 Si no hay filtros, obtener los últimos 10 creados
             list = await getSupplierList(1, 10, {}, true); // ⬅️ usamos nuevo parámetro "latest"
             }
-
             return list?.items ?? [];
         } catch (error) {
             console.error("❌ Error en getSuppliers:", error);

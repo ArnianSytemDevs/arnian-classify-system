@@ -127,8 +127,10 @@ export default function Clients() {
                     </button>
                 </div>
 
-                {/* Listado */}
+                <div className=' max-h-[90%] overflow-auto ' >
+                    {/* Listado */}
                     <ClientsList  status={status} />
+                </div>
 
                 {/* Modal de formulario */}
                 <ClientsForm openModal={open} setOpenModal={setOpen} mode={mode} status={status} />

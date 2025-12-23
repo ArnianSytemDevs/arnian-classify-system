@@ -56,7 +56,7 @@ export type EntryFilters = {
     id_supplier: any;
     is_disabled: boolean;
     id_status: any;
-    id_load:string;
+    id_load:any;
     id_client: any;
     created: string;
     updated: string;

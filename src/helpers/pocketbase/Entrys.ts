@@ -8,6 +8,7 @@ export const buildFilters = (filters?: any): string => {
   if (filters.id) clauses.push(`id = "${filters.id}"`);
   if (filters.public_key) clauses.push(`public_key ~ "${filters.public_key}"`);
   if (filters.id_author) clauses.push(`id_author = "${filters.id_author}"`);
+  if (filters.id_load) clauses.push(`id_load ~ "${filters.id_load}"`);
   if (filters.id_tax) clauses.push(`id_tax ~ "${filters.id_tax}"`);
   if (filters.invoice_number) clauses.push(`invoice_number ~ "${filters.invoice_number}"`);
   if (filters.id_supplier) clauses.push(`id_supplier = "${filters.id_supplier}"`);
