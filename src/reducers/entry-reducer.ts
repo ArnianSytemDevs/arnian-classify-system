@@ -109,16 +109,16 @@ export const EntryReducer = (
       ...state,
       entryForm: {
         public_key: firstEntry.public_key,
-        id_coordinator: firstEntry.id_author,
-        tax_id: firstEntry.id_tax,
-        invoice_number: firstEntry.invoice_number,
-        id_load: firstEntry.id_load,
+        id_coordinator: firstEntry.id_author || "",
+        tax_id: firstEntry.id_tax || "",
+        invoice_number: firstEntry.invoice_number || "",
+        id_load: firstEntry.id_load || "",
         id_supplier: action.payload.suppliers.find(
           (sp) => sp.id === firstEntry.id_supplier
-        ),
+        ) || "",
         id_client: action.payload.clients.find(
           (cl) => cl.id === firstEntry.id_client
-        ),
+        ) || "",
         files: firstEntry.file,
       },
     };

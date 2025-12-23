@@ -171,9 +171,10 @@ export default function Suppliers() {
             <FiRefreshCw className="hover:animate-spin" />
           </button>
         </div>
-
-        {/* Listado */}
-        <SuppliersList status={status} />
+        <div className=' max-h-[90%] overflow-auto ' >
+          {/* Listado */}
+          <SuppliersList status={status} />
+        </div>
 
         {/* Modal de formulario */}
         <SuppliersForm

@@ -62,7 +62,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         const trimmed = inputValue.trim();
 
         if (trimmed !== "") {
-        entryFormController.getSuppliers(trimmed, "create")
+        entryFormController.getSuppliers(trimmed, "create",false)
             .then((resp: any) => setSuppliers(resp))
             .catch((err) => console.error("❌ Error al cargar proveedores:", err));
         } else {
@@ -83,7 +83,7 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         const trimmed = inputCValue.trim();
 
         if (trimmed !== "") {
-        entryFormController.getClient(trimmed, mode)
+        entryFormController.getClient(trimmed, mode,false)
             .then((resp: any) => setClients(resp))
             .catch((err) => console.error("❌ Error al cargar clientes:", err));
         } else {
@@ -101,12 +101,17 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
         if (!openModal || mode !== "edit") return;
 
         const entry = entryState.entryList[0];
-        if (!entry || !entry.id_client || !entry.id_supplier) return;
+        if (!entry || !entry.id_client || !entry.id_supplier){
+            entryDispatch({type: 'edit-entry', payload:{ suppliers:suppliers, status:status, clients:clients }});
+            setClients([]);
+            setSuppliers([]);
+            return
+        }
 
         try {
         const [clientResp, supplierResp] :any= await Promise.all([
-            entryFormController.getClient(entry.id_client, mode),
-            entryFormController.getSuppliers(entry.id_supplier, mode),
+            entryFormController.getClient(entry.id_client, mode,true),
+            entryFormController.getSuppliers(entry.id_supplier, mode, true),
         ]);
 
         setClients(clientResp);

@@ -238,7 +238,9 @@ export default function Products() {
                 </div>
 
                 {/* Listado */}
-                <EntrysList status={status} key={refresh ? "ref1" : "ref2"} />
+                <div className=' max-h-[90%] overflow-auto ' >
+                    <EntrysList status={status} key={refresh ? "ref1" : "ref2"} />
+                </div>
 
                 {/* Modal de formulario */}
                 <EntryForm openModal={open} setOpenModal={setOpen} mode={mode} status={status} />
