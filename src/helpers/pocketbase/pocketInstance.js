@@ -26,7 +26,12 @@ routerAdd('POST', '/api/entry/create', (e) => {
   //IGKPIpTGucj4
 
   try {
-    $apis.requireAuth()
+
+    const user = e.auth;
+
+    if (!user) {
+      return e.json(401, { error: "No autenticado" });
+    }
     const info = e.requestInfo();
     const body = info.body || {};
 
@@ -35,14 +40,6 @@ routerAdd('POST', '/api/entry/create', (e) => {
 
     if (!publicKey) {
       return e.json(400, { error: "public_key es requerido" });
-    }
-
-    const usAuth = findUserByEmail(eauth);
-
-    if (usAuth) {
-      return e.json(403, {
-        error: "No tienes autorización para hacer cambios"
-      });
     }
     
     let collection = $app.findCollectionByNameOrId("Entrys");
@@ -71,4 +68,6 @@ routerAdd('POST', '/api/entry/create', (e) => {
     console.log("Entry create error:", error);
     return e.json(500, { error: "Internal server error" });
   }
-});
+},
+$apis.requireAuth()
+);
