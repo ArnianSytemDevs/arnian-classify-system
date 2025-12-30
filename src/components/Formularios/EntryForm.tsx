@@ -55,43 +55,43 @@ export default function EntryForm({openModal,setOpenModal,mode,status}:EntryForm
     
     // 🔹 Buscar proveedores con retardo (debounce)
     useEffect(() => {
-    // Verifica que el modal esté abierto y el modo sea válido
-    if (!(openModal && (mode === "create" || mode === "edit"))) return;
+        // Verifica que el modal esté abierto y el modo sea válido
+        if (!(openModal && (mode === "create" || mode === "edit"))) return;
 
-    const delay = setTimeout(() => {
-        const trimmed = inputValue.trim();
+        const delay = setTimeout(() => {
+            const trimmed = inputValue.trim();
 
-        if (trimmed !== "") {
-        entryFormController.getSuppliers(trimmed, "create",false)
-            .then((resp: any) => setSuppliers(resp))
-            .catch((err) => console.error("❌ Error al cargar proveedores:", err));
-        } else {
-        setSuppliers([]); // limpia si no hay texto
-        }
-    }, 800); // 800 ms de espera
+            if (trimmed !== "") {
+            entryFormController.getSuppliers(trimmed, mode,mode == "edit"? true:false)
+                .then((resp: any) => setSuppliers(resp))
+                .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+            } else {
+            setSuppliers([]); // limpia si no hay texto
+            }
+        }, 800); // 800 ms de espera
 
-    // Limpia el timeout al escribir otra vez o desmontar
-    return () => clearTimeout(delay);
+        // Limpia el timeout al escribir otra vez o desmontar
+        return () => clearTimeout(delay);
     }, [inputValue, openModal, mode]);
 
 
     // 🔹 Buscar clientes con retardo (debounce)
     useEffect(() => {
-    if (!(openModal && (mode === "create" || mode === "edit"))) return;
+        if (!(openModal && (mode === "create" || mode === "edit"))) return;
 
-    const delay = setTimeout(() => {
-        const trimmed = inputCValue.trim();
+        const delay = setTimeout(() => {
+            const trimmed = inputCValue.trim();
 
-        if (trimmed !== "") {
-        entryFormController.getClient(trimmed, mode,false)
-            .then((resp: any) => setClients(resp))
-            .catch((err) => console.error("❌ Error al cargar clientes:", err));
-        } else {
-        setClients([]); // limpia si no hay texto
-        }
-    }, 800);
+            if (trimmed !== "") {
+            entryFormController.getClient(trimmed, mode,mode == "edit"? true:false)
+                .then((resp: any) => setClients(resp))
+                .catch((err) => console.error("❌ Error al cargar clientes:", err));
+            } else {
+            setClients([]); // limpia si no hay texto
+            }
+        }, 800);
 
-    return () => clearTimeout(delay);
+        return () => clearTimeout(delay);
     }, [inputCValue, openModal, mode]);
 
 

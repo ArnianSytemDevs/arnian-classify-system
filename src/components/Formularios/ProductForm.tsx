@@ -51,23 +51,32 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
     };
 
     useEffect(() => {
-    // Verifica que el modal esté abierto y el modo sea válido
-    if (!(openModal && (mode === "create" || mode === "edit"))) return;
+      // Verifica que el modal esté abierto y el modo sea válido
+      console.log("ejecutando: ",mode)
+      if (!(openModal && (mode === "create" || mode === "edit"))) return;
+      const delay = setTimeout(() => {
+          const inputTrimmed = inputValue.trim();
+          const supplierFromEntry =
+            typeof productState?.productList?.[0]?.id_supplier === "string"
+              ? productState.productList[0].id_supplier.trim()
+              : "";
+          const searchValue =
+            inputTrimmed !== ""
+              ? inputTrimmed
+              : supplierFromEntry !== ""
+              ? supplierFromEntry
+              : "";
+          if (searchValue !== "") {
+          ProductFormController.getSuppliers(searchValue, mode,inputTrimmed == ""? true:false)
+              .then((resp: any) => setSuppliers(resp))
+              .catch((err) => console.error("❌ Error al cargar proveedores:", err));
+          } else {
+          setSuppliers([]); // limpia si no hay texto
+          }
+      }, 800); // 800 ms de espera
 
-    const delay = setTimeout(() => {
-        const trimmed = productState.productList[0].id_supplier;
-
-        if (trimmed !== "") {
-        ProductFormController.getSuppliers(trimmed, mode,mode == "edit"? true:false)
-            .then((resp: any) => setSuppliers(resp))
-            .catch((err) => console.error("❌ Error al cargar proveedores:", err));
-        } else {
-        setSuppliers([]); // limpia si no hay texto
-        }
-    }, 800); // 800 ms de espera
-
-    // Limpia el timeout al escribir otra vez o desmontar
-    return () => clearTimeout(delay);
+      // Limpia el timeout al escribir otra vez o desmontar
+      return () => clearTimeout(delay);
     }, [inputValue, openModal, mode]);
 
   useEffect(() => {
@@ -97,7 +106,7 @@ export default function ProductForm({ openModal, setOpenModal,mode }: ProductFor
   }, [openModal, mode]);
 
   useEffect(()=>{
-    if(openModal == true && mode == 'edit' && measurement.length != 0 && status.length != 0 && suppliers.length != 0){
+    if(openModal == true && mode == 'edit' && measurement.length != 0 && status.length != 0 && suppliers.length != 0 && productState.productForm.name == "" && productState.productForm.alias == ""){
       productDispatch({type: 'edit-product', payload:{ suppliers:suppliers, measurement:measurement }});
     }
   },[measurement,suppliers,openModal])

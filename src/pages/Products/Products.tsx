@@ -98,7 +98,7 @@ return (
                 <button onClick={()=>{ setOption(1) }} className={ option == 1? btnSelected:btnUnselected } > < FaListAlt className=' text-md ' /> {t("products.btnGet")}</button>
                 <br></br>
                 <UserPermissions permission='createProducts' role={role} >
-                    <button onClick={()=>{ setOpen(!open); setMode('çreate') }} className={ option == 2? btnSelected:btnUnselected } > < MdCreateNewFolder className=' text-md ' /> {t("products.btnCreate")}</button>
+                    <button onClick={()=>{ setOpen(!open); setMode('create') }} className={ option == 2? btnSelected:btnUnselected } > < MdCreateNewFolder className=' text-md ' /> {t("products.btnCreate")}</button>
                 </UserPermissions>
                 <br></br>
                 <UserPermissions permission='editProducts' role={role} >

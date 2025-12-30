@@ -125,7 +125,7 @@ export class ClassifyController {
         try {
             // 🔹 Definir los filtros base
             const baseFilters: Record<string, any> = {
-                deprecated: false,
+                deprected: false,
                 is_deleted: false,
             };
 
@@ -147,6 +147,8 @@ export class ClassifyController {
 
             // 🔹 Ejecutar la búsqueda
             let list;
+            console.log("🚀 ~ ClassifyController ~ getProducts ~ nameFilter:", nameFilter)
+            console.log("🚀 ~ ClassifyController ~ getProducts ~ baseFilters:", baseFilters)
             if (nameFilter) {
                 list = await getProductsList(undefined, undefined, baseFilters);
             } else {
