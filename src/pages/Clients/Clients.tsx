@@ -40,6 +40,7 @@ export default function Clients() {
         const success = await ClientsController.deleteClients(clientsState.clientList,status);
         if (success) {
             alert(t("Clients.alertSuccess", { defaultValue: "Entradas eliminadas correctamente." }));
+            window.location.reload();
         } else {
             alert(t("Clients.alertError", { defaultValue: "Error al eliminar las entradas." }));
         }

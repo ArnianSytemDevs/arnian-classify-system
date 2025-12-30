@@ -10,7 +10,7 @@ import type { Dispatch } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 export class ProductFormController {
-    public static async getSuppliers(nameFilter: string | undefined, mode: string, isPrefilled = false) {
+    public static async getSuppliers(nameFilter: string | undefined, mode: string,isPrefilled = false) {
         try {
             let list;
             const hasValue = typeof nameFilter === "string" && nameFilter.trim() !== "";

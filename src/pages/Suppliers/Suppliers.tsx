@@ -69,7 +69,7 @@ export default function Suppliers() {
           defaultValue: "Proveedores eliminados correctamente.",
         })
       );
-      window.location.reload()
+      window.location.reload();
     } else {
       alert(
         t("Suppliers.alertError", {
