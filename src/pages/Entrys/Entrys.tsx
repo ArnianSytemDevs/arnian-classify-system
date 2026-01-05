@@ -104,6 +104,30 @@ export default function Products() {
         }
         };
 
+        const handleCreate = () => {
+            const notes = t("Entrys.alertInfoCreate", { returnObjects: true });
+            const title = t("Entrys.alertInfoTitle");
+            const confirmText = "OK!";
+            const plusNote = t("Entrys.alertPlusNote")
+
+            Swal.fire({
+                icon: "info",
+                title,
+                html: `
+                <ul class="list-disc text-md pl-5 text-left">
+                    ${Array.isArray(notes) ? notes.map(n => `<li>${n}</li>`).join("") : ""}
+                </ul>
+                <br/>
+                <p>${plusNote}</p>
+                `,
+                confirmButtonText: confirmText,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                setOpen(true);
+                setMode("create");
+                }
+            });
+        };
 
     return (
         <div className="w-full h-full flex flex-row">
@@ -126,8 +150,7 @@ export default function Products() {
                 <UserPermissions permission='createEntry' role={role} >
                     <button
                         onClick={() => {
-                            setOpen(true);
-                            setMode("create");
+                            handleCreate()
                         }}
                         className={option === 2 ? btnSelected : btnUnselected}
                     >
@@ -215,7 +238,9 @@ export default function Products() {
                 </div>
 
                 {/* Listado */}
-                <EntrysList status={status} key={refresh ? "ref1" : "ref2"} />
+                <div className=' max-h-[90%] overflow-auto ' >
+                    <EntrysList status={status} key={refresh ? "ref1" : "ref2"} />
+                </div>
 
                 {/* Modal de formulario */}
                 <EntryForm openModal={open} setOpenModal={setOpen} mode={mode} status={status} />

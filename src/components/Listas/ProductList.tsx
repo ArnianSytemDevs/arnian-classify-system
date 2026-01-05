@@ -18,13 +18,15 @@ import type { SelectChangeEvent } from "@mui/material";
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import NoPhoto from "../../assets/NotPhoto.png";
 import { useTranslation } from "react-i18next";
+import { FaSquare } from "react-icons/fa6";
+import { FaCheckSquare } from "react-icons/fa";
 
 type ProductListProps = {
   status: Status[];
 };
 
 export default function ProductList({ status }: ProductListProps) {
-  const { productDispatch } = useClassifyContext();
+  const { productState,productDispatch } = useClassifyContext();
   const [products, setProducts] = useState<any[]>([]);
   const [openMod, setOpenMod] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -244,18 +246,20 @@ export default function ProductList({ status }: ProductListProps) {
               <tr
                 key={p.id}
                 className="hover:bg-gray-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                onClick={() => {
+                    productDispatch({
+                    type: "change-box",
+                    payload: {
+                        product: p,
+                        status: !productState.productList.some(item => item.id === p.id),
+                    },
+                    });
+                }}
               >
                 <td className={thBody}>
-                  <input
-                    className="w-5 h-5 accent-cyan-600 cursor-pointer"
-                    type="checkbox"
-                    onChange={(e) =>
-                      productDispatch({
-                        type: "change-box",
-                        payload: { product: p, status: e.target.checked },
-                      })
-                    }
-                  />
+                  {
+                      productState.productList.some(item => item.id === p.id)?(<FaCheckSquare className=" text-xl text-sky-600 border-1 border-gray-500 rounded-xs " />):(<FaSquare className=" text-xl text-white border-1 border-gray-500 rounded-xs " />)
+                  }
                 </td>
                 <td className={thBody}>{renderImage(p.files, p)}</td>
                 <td className={thBody}>{p.alias}</td>

@@ -48,17 +48,18 @@ export type EntryForm = {
 }
 
 export type EntryFilters = {
-    id: string,
-    public_key: string,
-    id_author: any,
-    id_tax: string,
-    invoice_number: string,
-    id_supplier: any,
-    is_disabled: boolean,
-    id_status: any,
-    id_client: any,
-    created: string,
-    updated: string
+    id: string;
+    public_key: string;
+    id_author: any;
+    id_tax: string;
+    invoice_number: string;
+    id_supplier: any;
+    is_disabled: boolean;
+    id_status: any;
+    id_load:any;
+    id_client: any;
+    created: string;
+    updated: string;
 }
 
 export type classifyProduct = {
@@ -85,8 +86,8 @@ export type classifyProduct = {
     parts_number: any;
     item: any;
     lumps: any;
-    supplier?:any
-    edit:boolean
+    supplier?:any;
+    edit:boolean;
     synced?: boolean;
     syncError?: string | null;
     id_pocketbase?: string | null;

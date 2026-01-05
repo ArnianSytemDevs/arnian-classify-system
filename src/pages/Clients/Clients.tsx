@@ -40,6 +40,7 @@ export default function Clients() {
         const success = await ClientsController.deleteClients(clientsState.clientList,status);
         if (success) {
             alert(t("Clients.alertSuccess", { defaultValue: "Entradas eliminadas correctamente." }));
+            window.location.reload();
         } else {
             alert(t("Clients.alertError", { defaultValue: "Error al eliminar las entradas." }));
         }
@@ -127,8 +128,10 @@ export default function Clients() {
                     </button>
                 </div>
 
-                {/* Listado */}
+                <div className=' max-h-[90%] overflow-auto ' >
+                    {/* Listado */}
                     <ClientsList  status={status} />
+                </div>
 
                 {/* Modal de formulario */}
                 <ClientsForm openModal={open} setOpenModal={setOpen} mode={mode} status={status} />
