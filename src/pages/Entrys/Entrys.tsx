@@ -129,6 +129,22 @@ export default function Products() {
             });
         };
 
+    const checkInfoClassify = () => {
+        if (entryState.entryList.length === 0) return true;
+
+        const entry = entryState.entryList[0];
+
+        return (
+            entry.id_client === "" &&
+            entry.id_load === "" &&
+            entry.id_status === "" &&
+            entry.id_supplier === "" &&
+            entry.id_tax === "" &&
+            entry.invoice_number === ""
+        );
+    };
+
+
     return (
         <div className="w-full h-full flex flex-row">
             {/* Sidebar */}
@@ -197,10 +213,7 @@ export default function Products() {
                 </UserPermissions>
                 <br />
                 <button
-                    disabled={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
-                    }
+                    disabled={ entryState.entryList.length !== 1 || checkInfoClassify() }
                     onClick={() => {
                         classifyDispatch({ type:'set-entry', payload:{ entry:entryState.entryList[0] } })
                         setTimeout(() => {
@@ -209,8 +222,7 @@ export default function Products() {
 
                     }}
                     className={
-                        entryState.entryList.length > 1 ||
-                        entryState.entryList.length === 0
+                        entryState.entryList.length !== 1 || checkInfoClassify()
                             ? btnDisabled
                             : option === 3
                             ? btnSelected
