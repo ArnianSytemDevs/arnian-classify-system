@@ -1,7 +1,7 @@
 import PocketBase from "pocketbase";
 
-// export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "http://localhost:8090");
-export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "https://classify-app.pockethost.io/");
+export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "http://localhost:8090");
+// export const pb = new PocketBase(import.meta.env.VITE_PB_URL || "https://classify-app.pockethost.io/");
 
 /* =======================================================
   HELPERS
