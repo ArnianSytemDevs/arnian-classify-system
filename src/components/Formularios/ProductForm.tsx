@@ -134,15 +134,43 @@ export default function ProductForm({ openModal, setOpenModal, mode }: ProductFo
             <TextField sx={inputText} variant="filled" label={t("products.form.lblSerial_number")} value={productState.productForm.serial_number} onChange={(e) => productDispatch({ type: 'change-textfield', payload: { e } })} id="serial_number" fullWidth required />
             <TextField sx={inputText} variant="filled" type="number" label={t("products.form.lblUnit_price") + " USD"} value={productState.productForm.unit_price} onChange={(e) => productDispatch({ type: 'change-textfield', payload: { e } })} id="unit_price" fullWidth />
             
-            <div className="flex gap-1">
-              <TextField sx={inputText} variant="filled" style={{ width: '70%' }} type="number" value={productState.productForm.weight} onChange={(e) => productDispatch({ type: 'change-textfield', payload: { e } })} name="weight" label={t("products.form.lblWeight")} required />
+            <div>
+              <TextField sx={inputText} variant="filled" style={{ width:'70%' }} type="number" inputProps={{ min: 0 }} id="weight" name="weight" value={productState.productForm.weight} onChange={(e)=>productDispatch({ type:'change-textfield', payload:{e:e} })} label={t("products.form.lblWeight")} fullWidth required />
               <Select
-                sx={{ width: "30%", background: "#FFF", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" }, "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#06b6d4" } }}
+                sx={{
+                    width: "30%",
+                    background:"#FFF",
+                    "& .MuiInputBase-root": {
+                        color: "text.primary",
+                        backgroundColor: "background.paper",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "divider",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#06b6d4", // cyan-500
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#0891b2", // cyan-600
+                    },
+                    "& .MuiSvgIcon-root": {
+                        color: "text.secondary", // icono flecha cambia con el modo
+                    },
+                }}
                 value={productState.productForm.id_measurement || ""}
-                onChange={(e: SelectChangeEvent) => productDispatch({ type: "change-select", payload: { e } })}
-              >
-                {measurement.map((msm) => <MenuItem key={msm.id} value={msm.id}>{msm.alias}</MenuItem>)}
+                onChange={(e: SelectChangeEvent) =>
+                    productDispatch({ type: "change-select", payload: { e: e } })
+                }
+                id="id_measurement"
+                name="id_measurement"
+                >
+                  {measurement.map((msm) => (
+                      <MenuItem key={msm.id} value={msm.id}>
+                          {msm.alias}
+                      </MenuItem>
+                  ))}
               </Select>
+
             </div>
 
             <div className="flex flex-row">
