@@ -5,7 +5,7 @@ import type { EntryForm } from "../types/forms"
 export type EntrysActions = 
 { type: 'set-entry', payload:{ entry:Entry } } |
 { type: 'change-box', payload:{ entry:Entry,status:boolean } } |
-{ type: 'change-autocomplete-entry', payload: { field: keyof any; value: number } } |
+{ type: 'change-autocomplete-entry', payload: { field: string; value: string | null } } |
 { type: 'add-files', payload:{ files:FileList } } | 
 { type: 'delete-file', payload:{ file:File['name'] } } |
 { type: 'change-textfield', payload: {e : ChangeEvent<HTMLInputElement| HTMLTextAreaElement | HTMLSelectElement > } } | 
@@ -115,10 +115,10 @@ export const EntryReducer = (
         id_load: firstEntry.id_load || "",
         id_supplier: action.payload.suppliers.find(
           (sp) => sp.id === firstEntry.id_supplier
-        ) || "",
+        ) || null,
         id_client: action.payload.clients.find(
           (cl) => cl.id === firstEntry.id_client
-        ) || "",
+        ) || null,
         files: firstEntry.file,
       },
     };
