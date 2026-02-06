@@ -16,7 +16,7 @@ import {
 import { FaFilter, FaBroom } from "react-icons/fa";
 import type { SelectChangeEvent } from "@mui/material";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-import NoPhoto from "../../assets/NotPhoto.png";
+import NoPhoto from "../../../public/assets/NotPhoto.png";
 import { useTranslation } from "react-i18next";
 import { FaSquare } from "react-icons/fa6";
 import { FaCheckSquare } from "react-icons/fa";

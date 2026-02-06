@@ -5,7 +5,7 @@ import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { EntrysController } from "./Entrys.controller";
 import type { EntryFilters } from "../../types/forms";
 import { Autocomplete, FormControl, MenuItem, Modal, Select, Switch, TextField, type SelectChangeEvent } from "@mui/material";
-import NoPhoto from "../../assets/NotPhoto.png"
+import NoPhoto from "../../../public/assets/NotPhoto.png"
 import { pb } from "../../helpers/pocketbase/pocketbase";
 import { useTranslation } from "react-i18next";
 import { FaSquare } from "react-icons/fa6";

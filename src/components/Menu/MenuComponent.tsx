@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "../../assets/icon.png";
+import logo from "../../../public/assets/icon.png";
 import { FaBoxes, FaEnvelopeOpenText } from "react-icons/fa";
 import { MdTranslate } from "react-icons/md";
 import { useTranslation } from "react-i18next";

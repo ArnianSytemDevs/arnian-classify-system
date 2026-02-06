@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useDebounce from "../../hooks/useDebounce";
-import ArnLogo from "../../assets/ArnianLogo.png";
+import ArnLogo from "../../../public/assets/ArnianLogo.png";
 import { Autocomplete, FormControl, Switch, TextField } from "@mui/material";
 import { useClassifyContext } from "../../hooks/useClassifyContext";
 import { FaTrashAlt, FaSave } from "react-icons/fa";
@@ -20,7 +20,7 @@ import { usePreventNavigation } from "../../hooks/ReturnAlert";
 import { FaPlusSquare } from "react-icons/fa";
 import ProductForm from "../../components/Formularios/ProductForm";
 import { pb } from "../../helpers/pocketbase/pocketbase";
-import NoPhoto from '../../assets/NotPhoto.png'
+import NoPhoto from '../../../public/assets/NotPhoto.png'
 import { checkRole } from "../../hooks/usePremission.controller";
 import UserPermissions from "../../hooks/usePremission";
 import { FaCheck } from "react-icons/fa";
